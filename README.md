@@ -1,3 +1,5 @@
+[▶️ Try it Live!](https://bensheed.github.io/openai-image-playground/)
+
 # AI Image Generation Playground
 
 A simple, frontend-only web application for generating images using the OpenAI DALL·E 3 API.
