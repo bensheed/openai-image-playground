@@ -155,3 +155,17 @@ small {
         width: 100%;
     }
 }
+
+
+/* Step 8: Option Descriptions and Layout */
+.option-item {
+    /* Grid handles layout, add padding/margin if needed */
+}
+
+.option-description {
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 5px; /* Space between control and description */
+    margin-bottom: 0; /* Reset default paragraph margin */
+}
+

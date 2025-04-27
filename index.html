@@ -33,63 +33,71 @@
             <textarea id="prompt" rows="4" placeholder="Enter prompt... (max length varies by model)"></textarea>
 
             <div class="options">
-                <div>
+                <div class="option-item">
                     <label for="size">Size:</label>
                     <select id="size">
                         <!-- Options populated by JS -->
                     </select>
+                    <p class="option-description">The dimensions of the generated image(s). Available sizes vary by model.</p>
                 </div>
-                <div>
+                <div class="option-item">
                     <label for="quality">Quality:</label>
                     <select id="quality">
                         <!-- Options populated by JS -->
                     </select>
-                </div>
-                 <div>
+                     <p class="option-description">The quality level of the image. 'hd' (DALL-E 3) offers enhanced detail but may cost more. Not applicable to DALL-E 2.</p>
+               </div>
+                 <div class="option-item">
                     <label for="n">Number of Images (n):</label>
                     <select id="n">
                         <!-- Options populated by JS -->
                     </select>
+                    <p class="option-description">How many images to generate (1-10). DALL-E 3 only supports 1.</p>
                  </div>
 
                 <!-- DALL-E 3 Specific Options -->
-                <div id="dalle3-options" class="model-specific-options" style="display: none;">
+                <div id="dalle3-options" class="model-specific-options option-item" style="display: none;">
                     <label for="style">Style:</label>
                     <select id="style">
                         <option value="vivid" selected>Vivid</option>
                         <option value="natural">Natural</option>
                     </select>
+                    <p class="option-description">DALL-E 3 only. 'vivid' for hyper-real/dramatic, 'natural' for less hyper-real.</p>
                 </div>
 
                 <!-- GPT-Image-1 Specific Options -->
                 <div id="gpt-image-1-options" class="model-specific-options" style="display: none;">
-                     <div>
+                     <div class="option-item">
                         <label for="background">Background:</label>
                         <select id="background">
                             <option value="auto" selected>Auto</option>
                             <option value="transparent">Transparent</option>
                             <option value="opaque">Opaque</option>
                         </select>
+                        <p class="option-description">gpt-image-1 only. Set background transparency. 'transparent' requires PNG/WEBP format.</p>
                     </div>
-                     <div>
+                     <div class="option-item">
                         <label for="moderation">Moderation:</label>
                         <select id="moderation">
                             <option value="auto" selected>Auto</option>
                             <option value="low">Low</option>
                         </select>
+                        <p class="option-description">gpt-image-1 only. Content moderation level ('low' for less restrictive).</p>
                     </div>
-                     <div>
+                     <div class="option-item">
                         <label for="output_format">Output Format:</label>
                         <select id="output_format">
                             <option value="png" selected>PNG</option>
                             <option value="jpeg">JPEG</option>
                             <option value="webp">WEBP</option>
                         </select>
+                        <p class="option-description">gpt-image-1 only. Image format (PNG, JPEG, WEBP).</p>
                     </div>
-                     <div>
+                     <div class="option-item">
                         <label for="output_compression">Output Compression (0-100):</label>
                         <input type="number" id="output_compression" value="100" min="0" max="100" step="1">
-                        <small>Only for JPEG/WEBP</small>
+                        <p class="option-description">gpt-image-1 only. Compression level (0-100) for JPEG/WEBP formats.</p>
+                        <!-- <small>Only for JPEG/WEBP</small> --> <!-- Replaced by description -->
                     </div>
                 </div>
             </div>
