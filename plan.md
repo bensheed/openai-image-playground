@@ -93,6 +93,37 @@ Create a no-code, mobile-optimized web application that allows users to generate
     *   Test responsiveness on different screen sizes (desktop, tablet, mobile) using browser developer tools.
     *   Test in different browsers (Chrome, Firefox, Safari).
 
+
+7.  **Refine 'N' Input:**
+    *   Modify the HTML for the 'Number of Images (n)' input (`<input type="number" id="n">`) to be a `<select>` dropdown element.
+    *   Update the JavaScript (`updateOptionsUI` function in `script.js`) to dynamically populate this dropdown with options from 1 to the `maxN` allowed by the selected model (1 for DALL-E 3, 10 for others).
+    *   Ensure the dropdown styling matches the other dropdowns for visual consistency (check `style.css`).
+
+8.  **Improve Option Layout and Descriptions:**
+    *   Adjust the CSS (`style.css`) for the `.options` container and its children.
+    *   Use CSS (e.g., Flexbox or Grid) to align the dropdown labels and controls to the left side of their respective grid cells.
+    *   Add descriptive text elements (e.g., `<p class="option-description">` or similar) next to or below each control (Size, Quality, N, Style, Background, etc.) in `index.html`.
+    *   Populate these descriptions with brief explanations of what each parameter does, based on `docs.md`.
+    *   Style these descriptions appropriately in `style.css` (e.g., smaller font size, muted color).
+    *   Ensure the layout remains responsive on mobile devices.
+
+9.  **Add API Key Tooltip:**
+    *   In `index.html`, add a small element (e.g., a `<span>` or `<a>` containing a question mark icon '❓' or '(?)') next to the "Enter your API Key:" label or the `<h2>OpenAI API Key</h2>` heading.
+    *   Add an `id` to this element (e.g., `api-key-tooltip-trigger`).
+    *   Add a hidden `div` element nearby to contain the tooltip text (e.g., `<div id="api-key-tooltip" class="tooltip" style="display: none;">...</div>`).
+    *   Populate the tooltip `div` with text explaining how to get an API key, including the link: `"You need an OpenAI API key. You can create one at https://platform.openai.com/api-keys"`.
+    *   Add CSS in `style.css` to style the trigger element (cursor, appearance) and the tooltip itself (positioning, background, border, padding, z-index).
+    *   Add JavaScript in `script.js` to add event listeners (e.g., `mouseover`/`mouseout` or `click`) to the trigger element to show/hide the tooltip `div` by changing its `display` style.
+
+10. **Implement Camera Roll:**
+    *   Add a new section in `index.html` below the results section, e.g., `<section id="camera-roll-section"><h2>Camera Roll</h2><div id="camera-roll-images"></div></section>`.
+    *   Add CSS in `style.css` to style the camera roll section and the images within it (e.g., display as a grid or row, set max-width/height for thumbnails, add spacing).
+    *   Modify the image generation success logic in `script.js`:
+        *   Before displaying the *new* image(s) in the `#image-result` div, check if there are existing images in `#image-result`.
+        *   If existing images are found, move them (or copies of them) from `#image-result` to the `#camera-roll-images` div.
+        *   Ensure that when moving/copying, the images retain their `src` (URL or base64 data URI).
+        *   Consider adding functionality to clear the camera roll or limit the number of stored images if `localStorage` usage becomes a concern (optional enhancement).
+
 ## Considerations
 -   **API Costs:** Clearly inform users that generating images incurs costs on their OpenAI account.
 -   **Security:** Emphasize that the API key is stored *only* in their browser's `localStorage` and is *not* sent to any backend server associated with this app. However, `localStorage` is not highly secure; advise users accordingly.
