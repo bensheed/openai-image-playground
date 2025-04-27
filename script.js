@@ -218,8 +218,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sizeSelect.value !== 'auto' || selectedModel !== 'gpt-image-1') {
              requestBody.size = sizeSelect.value;
         }
-        // Add quality only if model is NOT dall-e-2 AND (quality is not auto OR model is not gpt-image-1)
-        if (selectedModel !== 'dall-e-2' && (qualitySelect.value !== 'auto' || selectedModel !== 'gpt-image-1')) {
+        // Add quality parameter
+        if (selectedModel === 'dall-e-2') {
+            // Explicitly set standard quality for dall-e-2 (hypothesis)
+            requestBody.quality = "standard";
+        } else if (qualitySelect.value !== 'auto' || selectedModel !== 'gpt-image-1') {
+             // For other models (dall-e-3, gpt-image-1), add if not default 'auto' for gpt-image-1
              requestBody.quality = qualitySelect.value;
         }
 
