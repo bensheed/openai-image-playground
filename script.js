@@ -101,12 +101,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
 
-        // Update N Input Max and Value
-        nInput.max = options.maxN;
-        if (parseInt(nInput.value) > options.maxN) {
-            nInput.value = options.maxN; // Adjust value if current value exceeds new max
+        // Populate N Dropdown
+        const nSelect = nInput; // Re-using the variable name, but it's the select element now
+        const currentNValue = parseInt(nSelect.value); // Store current value before clearing
+        nSelect.innerHTML = ''; // Clear existing options
+        for (let i = 1; i <= options.maxN; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = i;
+            nSelect.appendChild(option);
         }
-        nInput.disabled = options.maxN === 1; // Disable if only 1 allowed
+        // Try to restore previous selection if valid, otherwise default to 1
+        if (currentNValue >= 1 && currentNValue <= options.maxN) {
+            nSelect.value = currentNValue;
+        } else {
+            nSelect.value = 1;
+        }
+        nSelect.disabled = options.maxN === 1; // Disable dropdown if only 1 option
 
 
         // Show/Hide Model Specific Sections
