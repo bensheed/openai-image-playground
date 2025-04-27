@@ -122,17 +122,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Show/Hide Model Specific Sections
         dalle3OptionsDiv.style.display = options.supportsStyle ? 'block' : 'none';
-        gptImage1OptionsDiv.style.display = (options.supportsBackground || options.supportsModeration || options.supportsOutputFormat || options.supportsOutputCompression) ? 'block' : 'none';
+        // Show/Hide GPT-Image-1 specific options individually
+        const gptImage1Options = document.querySelectorAll('.gpt-image-1-option');
+        const showGpt1Options = selectedModel === 'gpt-image-1';
+        gptImage1Options.forEach(el => {
+            el.style.display = showGpt1Options ? 'block' : 'none';
+        });
 
-        // Enable/Disable gpt-image-1 specific controls within the section
-        backgroundSelect.closest('div').style.display = options.supportsBackground ? 'block' : 'none';
-        moderationSelect.closest('div').style.display = options.supportsModeration ? 'block' : 'none';
-        outputFormatSelect.closest('div').style.display = options.supportsOutputFormat ? 'block' : 'none';
-        outputCompressionInput.closest('div').style.display = options.supportsOutputFormat ? 'block' : 'none'; // Compression shown if format is shown
-
-        // Handle output_compression enable/disable based on output_format
+        // If showing GPT-1 options, handle compression input visibility/disable state
+        if (showGpt1Options) {
         const compressionEnabled = options.supportsOutputCompression && ['jpeg', 'webp'].includes(outputFormatSelect.value);
         outputCompressionInput.disabled = !compressionEnabled;
+        }
 
     }
 
@@ -316,7 +317,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error('Error generating image:', error);
-            statusMessage.textContent = `Error: ${error.message}`;
+            let displayErrorMessage = `Error: ${error.message}`;
+            // Check for common indicators of potential billing/input errors (like the 400 Bad Request we saw)
+            if (error.message.includes('Error in request') || error.message.includes('check your input') || error.message.includes('400')) {
+                displayErrorMessage += '\n\n(This might be due to insufficient credits or account limits. Check your balance: https://platform.openai.com/settings/organization/billing/overview)';
+            }
+            statusMessage.textContent = displayErrorMessage;
             statusMessage.style.color = 'red';
         } finally {
             // --- Reset UI State ---
