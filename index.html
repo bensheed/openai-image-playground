@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Playground</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>AI Image Generation Playground</h1>
+
+    <div class="container">
+        <section id="api-key-section">
+            <h2>OpenAI API Key</h2>
+            <label for="api-key">Enter your API Key:</label>
+            <input type="password" id="api-key" placeholder="sk-...">
+            <button id="save-key-button">Save Key</button>
+            <p id="key-status">Status: No key saved.</p>
+            <small>Your key is stored locally in your browser's localStorage and is not sent anywhere else.</small>
+        </section>
+
+        <section id="generation-controls">
+            <h2>Generate Image</h2>
+            <label for="prompt">Prompt:</label>
+            <textarea id="prompt" rows="4" placeholder="e.g., A cute cat wearing a tiny hat"></textarea>
+
+            <div class="options">
+                <label for="size">Size:</label>
+                <select id="size">
+                    <option value="1024x1024" selected>1024x1024</option>
+                    <option value="1792x1024">1792x1024</option>
+                    <option value="1024x1792">1024x1792</option>
+                </select>
+
+                <label for="quality">Quality:</label>
+                <select id="quality">
+                    <option value="standard" selected>Standard</option>
+                    <option value="hd">HD</option>
+                </select>
+
+                <label for="style">Style:</label>
+                <select id="style">
+                    <option value="vivid" selected>Vivid</option>
+                    <option value="natural">Natural</option>
+                </select>
+            </div>
+
+            <button id="generate-button">Generate Image</button>
+        </section>
+
+        <section id="results-section">
+            <h2>Result</h2>
+            <div id="status-message"></div>
+            <div id="image-result">
+                <!-- Generated image will be displayed here -->
+            </div>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
