@@ -84,15 +84,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
         // Populate Quality Dropdown
-        qualitySelect.innerHTML = ''; // Clear existing options
-        options.qualities.forEach(quality => {
-            const option = document.createElement('option');
-            option.value = quality;
-            option.textContent = quality.charAt(0).toUpperCase() + quality.slice(1); // Capitalize
-            qualitySelect.appendChild(option);
-        });
-         // Set default or preserve selection if possible
-        qualitySelect.value = options.qualities.includes(qualitySelect.value) ? qualitySelect.value : options.qualities[0];
+        const qualityContainer = qualitySelect.closest('div'); // Get the parent div
+        if (selectedModel === 'dall-e-2') {
+            qualityContainer.style.display = 'none'; // Hide for DALL-E 2
+        } else {
+            qualityContainer.style.display = 'block'; // Show for others
+            qualitySelect.innerHTML = ''; // Clear existing options
+            options.qualities.forEach(quality => {
+                const option = document.createElement('option');
+                option.value = quality;
+                option.textContent = quality.charAt(0).toUpperCase() + quality.slice(1); // Capitalize
+                qualitySelect.appendChild(option);
+            });
+            // Set default or preserve selection if possible
+            qualitySelect.value = options.qualities.includes(qualitySelect.value) ? qualitySelect.value : options.qualities[0];
+        }
 
 
         // Update N Input Max and Value
@@ -212,7 +218,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sizeSelect.value !== 'auto' || selectedModel !== 'gpt-image-1') {
              requestBody.size = sizeSelect.value;
         }
-        if (qualitySelect.value !== 'auto' || selectedModel !== 'gpt-image-1') {
+        // Add quality only if model is NOT dall-e-2 AND (quality is not auto OR model is not gpt-image-1)
+        if (selectedModel !== 'dall-e-2' && (qualitySelect.value !== 'auto' || selectedModel !== 'gpt-image-1')) {
              requestBody.quality = qualitySelect.value;
         }
 
