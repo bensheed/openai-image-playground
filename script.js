@@ -101,28 +101,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
 
-        // Update N Input Max and Value
-        nInput.max = options.maxN;
-        if (parseInt(nInput.value) > options.maxN) {
-            nInput.value = options.maxN; // Adjust value if current value exceeds new max
+        // Populate N Dropdown
+        const nSelect = nInput; // Re-using the variable name, but it's the select element now
+        const currentNValue = parseInt(nSelect.value); // Store current value before clearing
+        nSelect.innerHTML = ''; // Clear existing options
+        for (let i = 1; i <= options.maxN; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = i;
+            nSelect.appendChild(option);
         }
-        nInput.disabled = options.maxN === 1; // Disable if only 1 allowed
+        // Try to restore previous selection if valid, otherwise default to 1
+        if (currentNValue >= 1 && currentNValue <= options.maxN) {
+            nSelect.value = currentNValue;
+        } else {
+            nSelect.value = 1;
+        }
+        nSelect.disabled = options.maxN === 1; // Disable dropdown if only 1 option
 
 
         // Show/Hide Model Specific Sections
         dalle3OptionsDiv.style.display = options.supportsStyle ? 'block' : 'none';
-        gptImage1OptionsDiv.style.display = (options.supportsBackground || options.supportsModeration || options.supportsOutputFormat || options.supportsOutputCompression) ? 'block' : 'none';
+        // Show/Hide GPT-Image-1 specific options individually
+        const gptImage1Options = document.querySelectorAll('.gpt-image-1-option');
+        const showGpt1Options = selectedModel === 'gpt-image-1';
+        gptImage1Options.forEach(el => {
+            el.style.display = showGpt1Options ? 'block' : 'none';
+        });
 
-        // Enable/Disable gpt-image-1 specific controls within the section
-        backgroundSelect.closest('div').style.display = options.supportsBackground ? 'block' : 'none';
-        moderationSelect.closest('div').style.display = options.supportsModeration ? 'block' : 'none';
-        outputFormatSelect.closest('div').style.display = options.supportsOutputFormat ? 'block' : 'none';
-        outputCompressionInput.closest('div').style.display = options.supportsOutputFormat ? 'block' : 'none'; // Compression shown if format is shown
-
-        // Handle output_compression enable/disable based on output_format
+        // If showing GPT-1 options, handle compression input visibility/disable state
+        if (showGpt1Options) {
         const compressionEnabled = options.supportsOutputCompression && ['jpeg', 'webp'].includes(outputFormatSelect.value);
         outputCompressionInput.disabled = !compressionEnabled;
-        outputCompressionInput.closest('div').querySelector('small').style.display = options.supportsOutputFormat ? 'inline' : 'none'; // Show/hide the note
+        }
+
     }
 
     // --- Event Listeners ---
@@ -211,37 +223,47 @@ document.addEventListener('DOMContentLoaded', () => {
         const requestBody = {
             model: selectedModel,
             prompt: prompt,
-            n: parseInt(nInput.value) || 1, // Ensure n is an integer
+            n: parseInt(nInput.value) || 1, // Common parameter
         };
 
-        // Add parameters based on model capabilities and user selections
-        if (sizeSelect.value !== 'auto' || selectedModel !== 'gpt-image-1') {
-             requestBody.size = sizeSelect.value;
-        }
-        // Add quality only if model is NOT dall-e-2 AND (quality is not auto OR model is not gpt-image-1)
-        if (selectedModel !== 'dall-e-2' && (qualitySelect.value !== 'auto' || selectedModel !== 'gpt-image-1')) {
-             requestBody.quality = qualitySelect.value;
-        }
-
-        // Note: gpt-image-1 implicitly returns b64_json, no need to set response_format
-        // Note: DALL-E models default to 'url', so we don't explicitly set it.
-
-        // Add model-specific parameters
-        if (modelConfig.supportsStyle) {
+        // --- Add Model-Specific Parameters ---
+        if (selectedModel === 'dall-e-3') {
+            // DALL-E 3 requires size, quality, style. n is always 1 (handled by UI).
+            requestBody.size = sizeSelect.value;
+            requestBody.quality = qualitySelect.value;
             requestBody.style = styleSelect.value;
-        }
-        if (modelConfig.supportsBackground && backgroundSelect.value !== 'auto') {
-            requestBody.background = backgroundSelect.value;
-        }
-        if (modelConfig.supportsModeration && moderationSelect.value !== 'auto') {
-            requestBody.moderation = moderationSelect.value;
-        }
-        if (modelConfig.supportsOutputFormat && outputFormatSelect.value !== 'png') { // Only include if not default
-             requestBody.output_format = outputFormatSelect.value;
-             // Include compression only if format is jpeg/webp
-             if (modelConfig.supportsOutputCompression && ['jpeg', 'webp'].includes(requestBody.output_format)) {
-                 requestBody.output_compression = parseInt(outputCompressionInput.value);
-             }
+            // response_format defaults to 'url', which is fine.
+        } else if (selectedModel === 'dall-e-2') {
+            // DALL-E 2 requires size. n can be > 1.
+            requestBody.size = sizeSelect.value;
+            // quality is not applicable. response_format defaults to 'url'.
+        } else if (selectedModel === 'gpt-image-1') {
+            // gpt-image-1 has many optional parameters.
+            // Size is optional (defaults to auto)
+            if (sizeSelect.value !== 'auto') {
+                requestBody.size = sizeSelect.value;
+            }
+            // Quality is optional (defaults to auto)
+            if (qualitySelect.value !== 'auto') {
+                requestBody.quality = qualitySelect.value;
+            }
+            // Background is optional (defaults to auto)
+            if (backgroundSelect.value !== 'auto') {
+                requestBody.background = backgroundSelect.value;
+            }
+            // Moderation is optional (defaults to auto)
+            if (moderationSelect.value !== 'auto') {
+                requestBody.moderation = moderationSelect.value;
+            }
+            // Output format is optional (defaults to png)
+            if (outputFormatSelect.value !== 'png') {
+                requestBody.output_format = outputFormatSelect.value;
+                // Compression only applies if format is jpeg/webp
+                if (['jpeg', 'webp'].includes(requestBody.output_format)) {
+                    requestBody.output_compression = parseInt(outputCompressionInput.value);
+                }
+            }
+            // response_format is implicitly b64_json.
         }
 
         console.log('Sending request to OpenAI:', JSON.stringify(requestBody, null, 2));
@@ -295,7 +317,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error('Error generating image:', error);
-            statusMessage.textContent = `Error: ${error.message}`;
+            let displayErrorMessage = `Error: ${error.message}`;
+            // Check for common indicators of potential billing/input errors (like the 400 Bad Request we saw)
+            if (error.message.includes('Error in request') || error.message.includes('check your input') || error.message.includes('400')) {
+                displayErrorMessage += '\n\n(This might be due to insufficient credits or account limits. Check your balance: https://platform.openai.com/settings/organization/billing/overview)';
+            }
+            statusMessage.textContent = displayErrorMessage;
             statusMessage.style.color = 'red';
         } finally {
             // --- Reset UI State ---
