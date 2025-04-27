@@ -223,11 +223,8 @@ document.addEventListener('DOMContentLoaded', () => {
              requestBody.quality = qualitySelect.value;
         }
 
-        // Add response_format only for DALL-E models (as per decision)
-        if (selectedModel === 'dall-e-2' || selectedModel === 'dall-e-3') {
-            requestBody.response_format = 'url';
-        }
         // Note: gpt-image-1 implicitly returns b64_json, no need to set response_format
+        // Note: DALL-E models default to 'url', so we don't explicitly set it.
 
         // Add model-specific parameters
         if (modelConfig.supportsStyle) {
