@@ -170,3 +170,71 @@ small {
     margin-bottom: 0; /* Reset default paragraph margin */
 }
 
+/* Provider Selection Styles */
+.provider-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.provider-option {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    cursor: pointer;
+}
+
+.provider-option:hover {
+    background-color: #f0f0f0;
+}
+
+.provider-option.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    position: relative;
+}
+
+.disabled-label {
+    color: #888;
+}
+
+.tooltip-icon {
+    display: inline-block;
+    margin-left: 5px;
+    color: #007bff;
+    cursor: help;
+    font-size: 0.9em;
+}
+
+.tooltip {
+    position: absolute;
+    background-color: #333;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    z-index: 100;
+    max-width: 250px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    top: 100%;
+    left: 0;
+    margin-top: 5px;
+}
+
+/* API Key Section Styles */
+#api-key-section > div {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+#api-key-section > div:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
