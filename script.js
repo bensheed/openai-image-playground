@@ -6,8 +6,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const googleKeySection = document.getElementById('google-key-section');
     const adobeTooltipTrigger = document.getElementById('adobe-tooltip-trigger');
     const adobeTooltip = document.getElementById('adobe-tooltip');
+    const vertexTooltipTrigger = document.getElementById('vertex-tooltip-trigger');
+    const vertexTooltip = document.getElementById('vertex-tooltip');
     
+
     // API Keys
+    // API Key Tooltips
+    const openaiKeyTooltipTrigger = document.getElementById('openai-key-tooltip-trigger');
+    const openaiKeyTooltip = document.getElementById('openai-key-tooltip');
+    const googleKeyTooltipTrigger = document.getElementById('google-key-tooltip-trigger');
+    const googleKeyTooltip = document.getElementById('google-key-tooltip');
     const openaiApiKeyInput = document.getElementById('openai-api-key');
     const saveOpenaiKeyButton = document.getElementById('save-openai-key-button');
     const openaiKeyStatus = document.getElementById('openai-key-status');
@@ -23,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const nInput = document.getElementById('n');
     const generateButton = document.getElementById('generate-button');
     const statusMessage = document.getElementById('status-message');
+    const nDescription = document.getElementById('n-description');
     const imageResultDiv = document.getElementById('image-result');
 
     // Model Specific Option Containers & Controls
@@ -40,6 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const googleImagenOptions = document.querySelectorAll('.google-imagen-option');
     const aspectRatioSelect = document.getElementById('aspect_ratio');
     const personGenerationSelect = document.getElementById('person_generation');
+
+
 
     // API Constants
     const OPENAI_API_KEY_NAME = 'openai_api_key';
@@ -90,9 +101,9 @@ document.addEventListener('DOMContentLoaded', () => {
             apiEndpoint: OPENAI_API_ENDPOINT
         },
         
-        // Google Imagen Models
+        // Google Imagen (Gemini API) Model
         "imagen-3.0-generate-002": {
-            provider: "google",
+            provider: "google", // Corresponds to the "Google Imagen" radio button
             sizes: [], // Controlled by aspect ratio instead
             qualities: [], // Not applicable
             maxN: 4, // Google Imagen supports 1-4 images
@@ -104,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
             supportsAspectRatio: true,
             supportsPersonGeneration: true,
             responseFormat: 'b64_json',
-            apiEndpoint: GOOGLE_IMAGEN_API_ENDPOINT
+            apiEndpoint: GOOGLE_IMAGEN_API_ENDPOINT // Gemini API endpoint
         }
     };
 
@@ -115,29 +126,53 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show/hide API key sections based on provider
         openaiKeySection.style.display = selectedProvider === 'openai' ? 'block' : 'none';
         googleKeySection.style.display = selectedProvider === 'google' ? 'block' : 'none';
+        // Note: Vertex AI is disabled, so no specific key section handling needed here.
+
+        // Enable/disable generate button
+        // The button should be enabled unless a disabled provider is somehow selected
+        const selectedProviderInput = document.querySelector(`input[name="provider"][value="${selectedProvider}"]`);
+        generateButton.disabled = selectedProviderInput?.disabled || false;
+        generateButton.textContent = 'Generate Image';
+        if (generateButton.disabled) {
+             generateButton.textContent = 'Generate Image (Provider N/A)';
+        }
         
+        // Clear status message
+        statusMessage.textContent = ''; 
+        modelSelect.disabled = false;
+
         // Filter and show only models for the selected provider
-        const options = modelSelect.querySelectorAll('option');
         let firstVisibleOption = null;
-        
-        options.forEach(option => {
-            const modelName = option.value;
+        modelSelect.innerHTML = ''; // Clear previous options before adding new ones
+
+        Object.keys(modelOptions).forEach(modelName => {
             const modelConfig = modelOptions[modelName];
-            
-            if (modelConfig && modelConfig.provider === selectedProvider) {
-                option.style.display = '';
+            if (modelConfig.provider === selectedProvider) {
+                const option = document.createElement('option');
+                option.value = modelName;
+                option.textContent = modelName;
+                // Add class for Google models if needed (for potential future styling)
+                if (selectedProvider === 'google') {
+                     option.classList.add('google-model');
+                }
+                modelSelect.appendChild(option);
                 if (!firstVisibleOption) {
                     firstVisibleOption = option;
                 }
-            } else {
-                option.style.display = 'none';
             }
         });
-        
-        // Select the first visible option
+
+        // Select the first visible option and update UI
         if (firstVisibleOption) {
             modelSelect.value = firstVisibleOption.value;
             updateOptionsUI(firstVisibleOption.value);
+        } else {
+             // This case should only happen if a provider has no models defined
+             // or if the disabled Vertex provider is somehow selected.
+             modelSelect.innerHTML = '<option value="">-- No models available --</option>';
+             modelSelect.disabled = true;
+             // Hide all standard model options
+             document.querySelectorAll('.options .option-item').forEach(el => el.style.display = 'none');
         }
     }
 
@@ -214,6 +249,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         nSelect.disabled = options.maxN === 1; // Disable dropdown if only 1 option
 
+        // Update N description
+        if (nDescription) {
+            let descriptionText = `How many images to generate (1-${options.maxN}).`;
+            if (selectedModel === 'dall-e-3') {
+                descriptionText += " DALL-E 3 only supports 1.";
+            } else if (options.provider === 'google') {
+                descriptionText += ` Google Imagen supports 1-${options.maxN}.`;
+            } else if (selectedModel === 'gpt-image-1') {
+                 descriptionText += ` Max ${options.maxN}.`;
+            } else if (selectedModel === 'dall-e-2') {
+                 descriptionText += ` Max ${options.maxN}.`;
+            }
+            nDescription.textContent = descriptionText;
+        }
+
         // Show/Hide OpenAI Model Specific Sections
         dalle3OptionsDiv.style.display = options.supportsStyle ? 'block' : 'none';
         
@@ -240,14 +290,54 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Adobe Firefly tooltip
-    adobeTooltipTrigger.addEventListener('mouseover', () => {
-        adobeTooltip.style.display = 'block';
-    });
-    
-    adobeTooltipTrigger.addEventListener('mouseout', () => {
-        adobeTooltip.style.display = 'none';
-    });
+
+
+    // --- Tooltip Hide Delay Logic ---
+    let hideTimeout;
+
+    function showTooltip(tooltipElement) {
+        clearTimeout(hideTimeout);
+        tooltipElement.style.display = 'block';
+    }
+
+    function hideTooltip(tooltipElement) {
+        hideTimeout = setTimeout(() => {
+            tooltipElement.style.display = 'none';
+        }, 100); // Delay hiding slightly
+    }
+
+    // Helper to add listeners
+    function addTooltipListeners(triggerElement, tooltipElement) {
+        if (triggerElement && tooltipElement) {
+            console.log(`Attaching tooltip listeners for: ${tooltipElement.id}`);
+            triggerElement.addEventListener('mouseover', () => {
+                console.log(`${tooltipElement.id} - trigger mouseover`);
+                showTooltip(tooltipElement);
+            });
+            triggerElement.addEventListener('mouseout', () => {
+                console.log(`${tooltipElement.id} - trigger mouseout`);
+                hideTooltip(tooltipElement);
+            });
+            tooltipElement.addEventListener('mouseover', () => {
+                console.log(`${tooltipElement.id} - tooltip mouseover`);
+                clearTimeout(hideTimeout); // Cancel hide if mouse enters tooltip
+            });
+            tooltipElement.addEventListener('mouseout', () => {
+                console.log(`${tooltipElement.id} - tooltip mouseout`);
+                hideTooltip(tooltipElement); // Hide when mouse leaves tooltip too
+            });
+        } else {
+            console.warn(`Tooltip elements not found for trigger/tooltip pair.`);
+        }
+    }
+
+    // Add listeners for specific tooltips
+    addTooltipListeners(openaiKeyTooltipTrigger, openaiKeyTooltip);
+    addTooltipListeners(googleKeyTooltipTrigger, googleKeyTooltip);
+    addTooltipListeners(adobeTooltipTrigger, adobeTooltip); // Apply to Adobe too for consistency
+    addTooltipListeners(vertexTooltipTrigger, vertexTooltip);
+
+
     
     // Update UI when model changes
     modelSelect.addEventListener('change', (e) => {
@@ -513,6 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (personGenerationSelect.value !== 'ALLOW_ADULT') {
             requestBody.parameters.personGeneration = personGenerationSelect.value;
         }
+
 
         console.log('Sending request to Google Imagen:', JSON.stringify(requestBody, null, 2));
 

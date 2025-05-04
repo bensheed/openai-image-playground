@@ -124,34 +124,40 @@ Create a no-code, mobile-optimized web application that allows users to generate
         *   Ensure that when moving/copying, the images retain their `src` (URL or base64 data URI).
         *   Consider adding functionality to clear the camera roll or limit the number of stored images if `localStorage` usage becomes a concern (optional enhancement).
 
-11. **Add Multi-Provider Support:**
+11. **Add Multi-Provider Support & Advanced Imagen Features:**
     *   Add radio buttons at the top of the UI for different image generation providers:
         *   OpenAI models (DALL-E 2, DALL-E 3, GPT-Image-1)
-        *   Google Imagen models
-        *   Adobe Firefly models
+        *   Google Imagen (via Gemini API)
+        *   Google Vertex AI (Disabled Placeholder)
+        *   Adobe Firefly models (Disabled Placeholder)
     *   Implement the UI changes:
         *   Create a new section in `index.html` above the model selection dropdown for provider selection.
         *   Style the provider selection section with radio buttons in `style.css`.
-        *   Grey out Adobe Firefly option (not yet supported) with appropriate styling and tooltip.
-        *   Update the model dropdown to dynamically show only models from the selected provider.
-    *   Implement Google Imagen API integration:
-        *   Add support for Google Imagen API using the Gemini API (https://ai.google.dev/gemini-api/docs/image-generation).
-        *   Define Google Imagen model options and parameters in the `modelOptions` object in `script.js`.
-        *   Create a new API endpoint constant for Google Imagen API.
-        *   Implement the API call function for Google Imagen similar to the OpenAI implementation.
+        *   Grey out Adobe Firefly and Google Vertex AI options, making them unclickable.
+        *   Add tooltips to disabled providers explaining their status (e.g., Vertex AI requires different setup/SaaS version).
+        *   Update the model dropdown to dynamically show only models from the selected *functional* provider (OpenAI, Google Imagen).
+    *   Implement Google Imagen API integration (Gemini Endpoint):
+        *   Use the Gemini API endpoint (`generativelanguage.googleapis.com`) for the "Google Imagen" provider.
+        *   Define the `imagen-3.0-generate-002` model and its supported parameters (`aspectRatio`, `personGeneration`, `numberOfImages`) in `modelOptions`.
+        *   Implement the API call function using the user's Google API Key.
+        *   (Note: Parameters like Negative Prompt, Seed, etc., are *not* supported by this endpoint for Imagen 3).
     *   Implement API key management for multiple providers:
-        *   Modify the API key section to support multiple providers.
-        *   Create separate input fields and storage for OpenAI and Google API keys.
-        *   Update the `localStorage` key names to be provider-specific (e.g., `openai_api_key`, `google_api_key`).
-        *   Modify the key loading and saving functions to handle multiple providers.
+        *   Modify the API key section to support OpenAI and Google API keys.
+        *   Show the relevant API key input based on the selected functional provider.
+        *   Hide API key inputs when a disabled provider (Vertex AI, Adobe) is selected.
     *   Update the image generation logic:
         *   Modify the generate button event listener to check which provider is selected.
-        *   Route the API call to the appropriate provider's API endpoint.
+        *   Route the API call to the appropriate provider's API endpoint (OpenAI, Google Imagen).
+        *   Disable generation button when a disabled provider is selected.
         *   Handle provider-specific response formats and error messages.
     *   Add provider-specific UI elements and options:
-        *   Create container divs for Google Imagen specific options.
-        *   Update the `updateOptionsUI` function to show/hide provider-specific options.
-        *   Ensure all provider-specific parameters are correctly included in API requests.
+        *   Create container divs for Google Imagen (Gemini API) specific options (`aspectRatio`, `personGeneration`).
+        *   Update the `updateProviderUI` and `updateOptionsUI` functions to show/hide provider-specific options and API key sections correctly.
+        *   Remove any non-functional UI elements previously added for Vertex AI.
+    *   **Future Enhancements (Deferred):**
+        *   **Vertex AI Implementation:** Fully implement Vertex AI generation. This likely requires a backend proxy server to handle Google Cloud authentication securely and make API calls to the `aiplatform.googleapis.com` endpoint. Define Vertex AI models (`imagegeneration@001`, `@002`, `@003`, etc.) and their parameters (`negativePrompt`, `seed`, etc.) in `modelOptions` and add corresponding UI controls.
+        *   **Imagen Editing Modes (Vertex AI):** Implement advanced Imagen capabilities like Image-to-Image, Inpainting, Outpainting via the Vertex AI API (requires backend and UI changes).
+        *   **Adobe Firefly Implementation:** Add support when feasible.
 
 ## Considerations
 -   **API Costs:** Clearly inform users that generating images incurs costs on their OpenAI account.

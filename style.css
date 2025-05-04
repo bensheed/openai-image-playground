@@ -117,6 +117,11 @@ small {
     margin-top: 10px;
 }
 
+
+.tooltip a {
+    color: #fff; /* Make links white inside tooltips */
+    text-decoration: underline; /* Keep underline for clarity */
+}
 #status-message {
     margin-bottom: 15px;
     font-weight: bold;
@@ -178,6 +183,8 @@ small {
     margin-bottom: 20px;
 }
 
+
+
 .provider-option {
     display: flex;
     align-items: center;
@@ -188,6 +195,11 @@ small {
     cursor: pointer;
 }
 
+
+#api-key-section label {
+    position: relative; /* Anchor for the absolute positioned tooltip */
+    display: inline-block; /* Ensure label and icon stay together */
+}
 .provider-option:hover {
     background-color: #f0f0f0;
 }
@@ -221,6 +233,7 @@ small {
     max-width: 250px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     top: 100%;
+    word-wrap: break-word; /* Allow long text/links to wrap */
     left: 0;
     margin-top: 5px;
 }

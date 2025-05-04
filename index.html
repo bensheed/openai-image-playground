@@ -22,6 +22,14 @@
                     <label for="provider-google">Google Imagen</label>
                 </div>
                 <div class="provider-option disabled">
+                    <input type="radio" id="provider-vertex-ai" name="provider" value="vertex-ai" disabled>
+                    <label for="provider-vertex-ai" class="disabled-label">Google Vertex AI</label>
+                    <span class="tooltip-icon" id="vertex-tooltip-trigger">ⓘ</span>
+                    <div id="vertex-tooltip" class="tooltip" style="display: none;">
+                        Full Vertex AI support with advanced parameters requires a different setup (e.g., SaaS version). Not available in this playground.
+                    </div>
+                </div>
+                <div class="provider-option disabled">
                     <input type="radio" id="provider-adobe" name="provider" value="adobe" disabled>
                     <label for="provider-adobe" class="disabled-label">Adobe Firefly (Coming Soon)</label>
                     <span class="tooltip-icon" id="adobe-tooltip-trigger">ⓘ</span>
@@ -35,13 +43,21 @@
         <section id="api-key-section">
             <h2>API Keys</h2>
             <div id="openai-key-section">
-                <label for="openai-api-key">OpenAI API Key:</label>
+                <label for="openai-api-key">OpenAI API Key: <span class="tooltip-icon" id="openai-key-tooltip-trigger">ⓘ</span>
+                    <div id="openai-key-tooltip" class="tooltip" style="display: none;">
+                        Create an OpenAI API key at <a href="https://platform.openai.com/api-keys" target="_blank">https://platform.openai.com/api-keys</a>
+                    </div>
+                </label>
                 <input type="password" id="openai-api-key" placeholder="sk-...">
                 <button id="save-openai-key-button">Save Key</button>
                 <p id="openai-key-status">Status: No key saved.</p>
             </div>
             <div id="google-key-section" style="display: none;">
-                <label for="google-api-key">Google API Key:</label>
+                <label for="google-api-key">Google API Key: <span class="tooltip-icon" id="google-key-tooltip-trigger">ⓘ</span>
+                    <div id="google-key-tooltip" class="tooltip" style="display: none;">
+                        Create a Google API key at <a href="https://aistudio.google.com/app/apikey" target="_blank">https://aistudio.google.com/app/apikey</a>
+                    </div>
+                </label>
                 <input type="password" id="google-api-key" placeholder="...">
                 <button id="save-google-key-button">Save Key</button>
                 <p id="google-key-status">Status: No key saved.</p>
@@ -85,7 +101,7 @@
                     <select id="n">
                         <!-- Options populated by JS -->
                     </select>
-                    <p class="option-description">How many images to generate (1-10). DALL-E 3 only supports 1.</p>
+                    <p class="option-description" id="n-description">How many images to generate (1-10). DALL-E 3 only supports 1.</p>
                  </div>
 
                 <!-- DALL-E 3 Specific Options -->
@@ -144,6 +160,7 @@
                     </select>
                     <p class="option-description">Google Imagen only. The aspect ratio of the generated image.</p>
                 </div>
+
                 <div class="option-item google-imagen-option" style="display: none;">
                     <label for="person_generation">Person Generation:</label>
                     <select id="person_generation">
@@ -153,6 +170,8 @@
                     <p class="option-description">Google Imagen only. Controls whether people can be generated in images.</p>
                 </div>
             </div>
+
+
 
             <button id="generate-button">Generate Image</button>
         </section>
