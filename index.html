@@ -35,13 +35,21 @@
         <section id="api-key-section">
             <h2>API Keys</h2>
             <div id="openai-key-section">
-                <label for="openai-api-key">OpenAI API Key:</label>
+                <label for="openai-api-key">OpenAI API Key: <span class="tooltip-icon" id="openai-key-tooltip-trigger">ⓘ</span>
+                    <div id="openai-key-tooltip" class="tooltip" style="display: none;">
+                        Create an OpenAI API key at <a href="https://platform.openai.com/api-keys" target="_blank">https://platform.openai.com/api-keys</a>
+                    </div>
+                </label>
                 <input type="password" id="openai-api-key" placeholder="sk-...">
                 <button id="save-openai-key-button">Save Key</button>
                 <p id="openai-key-status">Status: No key saved.</p>
             </div>
             <div id="google-key-section" style="display: none;">
-                <label for="google-api-key">Google API Key:</label>
+                <label for="google-api-key">Google API Key: <span class="tooltip-icon" id="google-key-tooltip-trigger">ⓘ</span>
+                    <div id="google-key-tooltip" class="tooltip" style="display: none;">
+                        Create a Google API key at <a href="https://aistudio.google.com/app/apikey" target="_blank">https://aistudio.google.com/app/apikey</a>
+                    </div>
+                </label>
                 <input type="password" id="google-api-key" placeholder="...">
                 <button id="save-google-key-button">Save Key</button>
                 <p id="google-key-status">Status: No key saved.</p>

@@ -7,7 +7,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const adobeTooltipTrigger = document.getElementById('adobe-tooltip-trigger');
     const adobeTooltip = document.getElementById('adobe-tooltip');
     
+
     // API Keys
+    // API Key Tooltips
+    const openaiKeyTooltipTrigger = document.getElementById('openai-key-tooltip-trigger');
+    const openaiKeyTooltip = document.getElementById('openai-key-tooltip');
+    const googleKeyTooltipTrigger = document.getElementById('google-key-tooltip-trigger');
+    const googleKeyTooltip = document.getElementById('google-key-tooltip');
     const openaiApiKeyInput = document.getElementById('openai-api-key');
     const saveOpenaiKeyButton = document.getElementById('save-openai-key-button');
     const openaiKeyStatus = document.getElementById('openai-key-status');
@@ -240,14 +246,53 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Adobe Firefly tooltip
-    adobeTooltipTrigger.addEventListener('mouseover', () => {
-        adobeTooltip.style.display = 'block';
-    });
-    
-    adobeTooltipTrigger.addEventListener('mouseout', () => {
-        adobeTooltip.style.display = 'none';
-    });
+
+
+    // --- Tooltip Hide Delay Logic ---
+    let hideTimeout;
+
+    function showTooltip(tooltipElement) {
+        clearTimeout(hideTimeout);
+        tooltipElement.style.display = 'block';
+    }
+
+    function hideTooltip(tooltipElement) {
+        hideTimeout = setTimeout(() => {
+            tooltipElement.style.display = 'none';
+        }, 100); // Delay hiding slightly
+    }
+
+    // Helper to add listeners
+    function addTooltipListeners(triggerElement, tooltipElement) {
+        if (triggerElement && tooltipElement) {
+            console.log(`Attaching tooltip listeners for: ${tooltipElement.id}`);
+            triggerElement.addEventListener('mouseover', () => {
+                console.log(`${tooltipElement.id} - trigger mouseover`);
+                showTooltip(tooltipElement);
+            });
+            triggerElement.addEventListener('mouseout', () => {
+                console.log(`${tooltipElement.id} - trigger mouseout`);
+                hideTooltip(tooltipElement);
+            });
+            tooltipElement.addEventListener('mouseover', () => {
+                console.log(`${tooltipElement.id} - tooltip mouseover`);
+                clearTimeout(hideTimeout); // Cancel hide if mouse enters tooltip
+            });
+            tooltipElement.addEventListener('mouseout', () => {
+                console.log(`${tooltipElement.id} - tooltip mouseout`);
+                hideTooltip(tooltipElement); // Hide when mouse leaves tooltip too
+            });
+        } else {
+            console.warn(`Tooltip elements not found for trigger/tooltip pair.`);
+        }
+    }
+
+    // Add listeners for specific tooltips
+    addTooltipListeners(openaiKeyTooltipTrigger, openaiKeyTooltip);
+    addTooltipListeners(googleKeyTooltipTrigger, googleKeyTooltip);
+    addTooltipListeners(adobeTooltipTrigger, adobeTooltip); // Apply to Adobe too for consistency
+
+
     
     // Update UI when model changes
     modelSelect.addEventListener('change', (e) => {
