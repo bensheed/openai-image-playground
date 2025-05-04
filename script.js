@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const nInput = document.getElementById('n');
     const generateButton = document.getElementById('generate-button');
     const statusMessage = document.getElementById('status-message');
+    const nDescription = document.getElementById('n-description');
     const imageResultDiv = document.getElementById('image-result');
 
     // Model Specific Option Containers & Controls
@@ -247,6 +248,21 @@ document.addEventListener('DOMContentLoaded', () => {
             nSelect.value = 1;
         }
         nSelect.disabled = options.maxN === 1; // Disable dropdown if only 1 option
+
+        // Update N description
+        if (nDescription) {
+            let descriptionText = `How many images to generate (1-${options.maxN}).`;
+            if (selectedModel === 'dall-e-3') {
+                descriptionText += " DALL-E 3 only supports 1.";
+            } else if (options.provider === 'google') {
+                descriptionText += ` Google Imagen supports 1-${options.maxN}.`;
+            } else if (selectedModel === 'gpt-image-1') {
+                 descriptionText += ` Max ${options.maxN}.`;
+            } else if (selectedModel === 'dall-e-2') {
+                 descriptionText += ` Max ${options.maxN}.`;
+            }
+            nDescription.textContent = descriptionText;
+        }
 
         // Show/Hide OpenAI Model Specific Sections
         dalle3OptionsDiv.style.display = options.supportsStyle ? 'block' : 'none';
