@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const aspectRatioSelect = document.getElementById('aspect_ratio');
     const personGenerationSelect = document.getElementById('person_generation');
 
+    const vertexAiOptionsContainer = document.getElementById('vertex-ai-options-container');
 
     // API Constants
     const OPENAI_API_KEY_NAME = 'openai_api_key';
@@ -119,32 +120,58 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateProviderUI(selectedProvider) {
         console.log(`Updating UI for provider: ${selectedProvider}`);
         
-        // Show/hide API key sections based on provider
+        // Show/hide API key sections and Vertex options
         openaiKeySection.style.display = selectedProvider === 'openai' ? 'block' : 'none';
         googleKeySection.style.display = selectedProvider === 'google' ? 'block' : 'none';
-        
-        // Filter and show only models for the selected provider
-        const options = modelSelect.querySelectorAll('option');
-        let firstVisibleOption = null;
-        
-        options.forEach(option => {
-            const modelName = option.value;
-            const modelConfig = modelOptions[modelName];
-            
-            if (modelConfig && modelConfig.provider === selectedProvider) {
-                option.style.display = '';
-                if (!firstVisibleOption) {
-                    firstVisibleOption = option;
+        vertexAiOptionsContainer.style.display = selectedProvider === 'vertex-ai' ? 'block' : 'none';
+
+        // Enable/disable generate button and clear status
+        if (selectedProvider === 'vertex-ai') {
+            generateButton.disabled = true;
+            generateButton.textContent = 'Generate Image (Vertex AI N/A)';
+            statusMessage.textContent = 'Vertex AI provider selected (UI Only - Generation Disabled).';
+            statusMessage.style.color = 'orange';
+            modelSelect.innerHTML = '<option value="">-- Vertex AI Models Not Implemented --</option>'; // Clear models
+            modelSelect.disabled = true;
+            // Hide all standard model options
+            document.querySelectorAll('.options .option-item').forEach(el => el.style.display = 'none');
+        } else {
+            generateButton.disabled = false;
+            generateButton.textContent = 'Generate Image';
+            statusMessage.textContent = ''; // Clear status message
+            modelSelect.disabled = false;
+
+            // Filter and show only models for the selected provider (OpenAI or Google)
+            const options = modelSelect.querySelectorAll('option');
+            let firstVisibleOption = null;
+            modelSelect.innerHTML = ''; // Clear previous options before adding new ones
+
+            Object.keys(modelOptions).forEach(modelName => {
+                const modelConfig = modelOptions[modelName];
+                if (modelConfig.provider === selectedProvider) {
+                    const option = document.createElement('option');
+                    option.value = modelName;
+                    option.textContent = modelName;
+                    // Add back classes if needed, e.g., for Google models
+                    if (selectedProvider === 'google') {
+                         option.classList.add('google-model');
+                    }
+                    modelSelect.appendChild(option);
+                    if (!firstVisibleOption) {
+                        firstVisibleOption = option;
+                    }
                 }
+            });
+
+            // Select the first visible option and update UI
+            if (firstVisibleOption) {
+                modelSelect.value = firstVisibleOption.value;
+                updateOptionsUI(firstVisibleOption.value);
             } else {
-                option.style.display = 'none';
+                 modelSelect.innerHTML = '<option value="">-- No models available --</option>';
+                 // Hide all standard model options if no models found
+                 document.querySelectorAll('.options .option-item').forEach(el => el.style.display = 'none');
             }
-        });
-        
-        // Select the first visible option
-        if (firstVisibleOption) {
-            modelSelect.value = firstVisibleOption.value;
-            updateOptionsUI(firstVisibleOption.value);
         }
     }
 
