@@ -21,9 +21,13 @@
                     <input type="radio" id="provider-google" name="provider" value="google">
                     <label for="provider-google">Google Imagen</label>
                 </div>
-                <div class="provider-option">
-                    <input type="radio" id="provider-vertex-ai" name="provider" value="vertex-ai">
-                    <label for="provider-vertex-ai">Google Vertex AI (UI Only)</label>
+                <div class="provider-option disabled">
+                    <input type="radio" id="provider-vertex-ai" name="provider" value="vertex-ai" disabled>
+                    <label for="provider-vertex-ai" class="disabled-label">Google Vertex AI</label>
+                    <span class="tooltip-icon" id="vertex-tooltip-trigger">ⓘ</span>
+                    <div id="vertex-tooltip" class="tooltip" style="display: none;">
+                        Full Vertex AI support with advanced parameters requires a different setup (e.g., SaaS version). Not available in this playground.
+                    </div>
                 </div>
                 <div class="provider-option disabled">
                     <input type="radio" id="provider-adobe" name="provider" value="adobe" disabled>
@@ -167,52 +171,7 @@
                 </div>
             </div>
 
-            <!-- Vertex AI Specific Options (UI Only) -->
-            <div id="vertex-ai-options-container" class="vertex-ai-option" style="display: none;">
-                <h3>Vertex AI Options (Not Functional)</h3>
-                <div class="options">
-                    <div class="option-item">
-                        <label for="vertex_negative_prompt">Negative Prompt:</label>
-                        <textarea id="vertex_negative_prompt" rows="2" placeholder="Enter elements to exclude..."></textarea>
-                        <p class="option-description">Vertex AI only. Describe what you *don't* want.</p>
-                    </div>
-                    <div class="option-item">
-                        <label for="vertex_seed">Seed:</label>
-                        <input type="number" id="vertex_seed" placeholder="Leave blank for random">
-                        <p class="option-description">Vertex AI only. Integer for reproducible results.</p>
-                    </div>
-                    <div class="option-item">
-                        <label for="vertex_guidance_scale">Guidance Scale:</label>
-                        <input type="number" id="vertex_guidance_scale" value="7.0" min="1" max="20" step="0.5">
-                        <p class="option-description">Vertex AI only. Prompt adherence (1-20).</p>
-                    </div>
-                    <div class="option-item">
-                        <label for="vertex_style_preset">Style Preset:</label>
-                        <select id="vertex_style_preset">
-                            <option value="" selected>None</option>
-                            <option value="photographic">Photographic</option>
-                            <option value="digital-art">Digital Art</option>
-                            <option value="cinematic">Cinematic</option>
-                            <option value="anime">Anime</option>
-                            <option value="painterly">Painterly</option>
-                            <option value="pixel-art">Pixel Art</option>
-                            <option value="fantasy">Fantasy</option>
-                            <option value="neon">Neon</option>
-                            <option value="isometric">Isometric</option>
-                            <option value="dystopian">Dystopian</option>
-                            <option value="steampunk">Steampunk</option>
-                            <option value="minimalist">Minimalist</option>
-                            <option value="origami">Origami</option>
-                            <option value="watercolor">Watercolor</option>
-                            <option value="retrowave">Retrowave</option>
-                            <option value="3d-model">3D Model</option>
-                        </select>
-                        <p class="option-description">Vertex AI only. Apply a visual style.</p>
-                    </div>
-                    <!-- Add other Vertex AI specific params here if needed -->
-                </div>
-                <p id="vertex-status-message" style="color: orange; margin-top: 10px;">Note: Vertex AI generation is not implemented. These controls are for UI demonstration only.</p>
-            </div>
+
 
             <button id="generate-button">Generate Image</button>
         </section>

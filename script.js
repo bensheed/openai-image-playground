@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const googleKeySection = document.getElementById('google-key-section');
     const adobeTooltipTrigger = document.getElementById('adobe-tooltip-trigger');
     const adobeTooltip = document.getElementById('adobe-tooltip');
+    const vertexTooltipTrigger = document.getElementById('vertex-tooltip-trigger');
+    const vertexTooltip = document.getElementById('vertex-tooltip');
     
 
     // API Keys
@@ -47,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const aspectRatioSelect = document.getElementById('aspect_ratio');
     const personGenerationSelect = document.getElementById('person_generation');
 
-    const vertexAiOptionsContainer = document.getElementById('vertex-ai-options-container');
+
 
     // API Constants
     const OPENAI_API_KEY_NAME = 'openai_api_key';
@@ -98,9 +100,9 @@ document.addEventListener('DOMContentLoaded', () => {
             apiEndpoint: OPENAI_API_ENDPOINT
         },
         
-        // Google Imagen Models
+        // Google Imagen (Gemini API) Model
         "imagen-3.0-generate-002": {
-            provider: "google",
+            provider: "google", // Corresponds to the "Google Imagen" radio button
             sizes: [], // Controlled by aspect ratio instead
             qualities: [], // Not applicable
             maxN: 4, // Google Imagen supports 1-4 images
@@ -112,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
             supportsAspectRatio: true,
             supportsPersonGeneration: true,
             responseFormat: 'b64_json',
-            apiEndpoint: GOOGLE_IMAGEN_API_ENDPOINT
+            apiEndpoint: GOOGLE_IMAGEN_API_ENDPOINT // Gemini API endpoint
         }
     };
 
@@ -120,58 +122,56 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateProviderUI(selectedProvider) {
         console.log(`Updating UI for provider: ${selectedProvider}`);
         
-        // Show/hide API key sections and Vertex options
+        // Show/hide API key sections based on provider
         openaiKeySection.style.display = selectedProvider === 'openai' ? 'block' : 'none';
         googleKeySection.style.display = selectedProvider === 'google' ? 'block' : 'none';
-        vertexAiOptionsContainer.style.display = selectedProvider === 'vertex-ai' ? 'block' : 'none';
+        // Note: Vertex AI is disabled, so no specific key section handling needed here.
 
-        // Enable/disable generate button and clear status
-        if (selectedProvider === 'vertex-ai') {
-            generateButton.disabled = true;
-            generateButton.textContent = 'Generate Image (Vertex AI N/A)';
-            statusMessage.textContent = 'Vertex AI provider selected (UI Only - Generation Disabled).';
-            statusMessage.style.color = 'orange';
-            modelSelect.innerHTML = '<option value="">-- Vertex AI Models Not Implemented --</option>'; // Clear models
-            modelSelect.disabled = true;
-            // Hide all standard model options
-            document.querySelectorAll('.options .option-item').forEach(el => el.style.display = 'none');
-        } else {
-            generateButton.disabled = false;
-            generateButton.textContent = 'Generate Image';
-            statusMessage.textContent = ''; // Clear status message
-            modelSelect.disabled = false;
+        // Enable/disable generate button
+        // The button should be enabled unless a disabled provider is somehow selected
+        const selectedProviderInput = document.querySelector(`input[name="provider"][value="${selectedProvider}"]`);
+        generateButton.disabled = selectedProviderInput?.disabled || false;
+        generateButton.textContent = 'Generate Image';
+        if (generateButton.disabled) {
+             generateButton.textContent = 'Generate Image (Provider N/A)';
+        }
+        
+        // Clear status message
+        statusMessage.textContent = ''; 
+        modelSelect.disabled = false;
 
-            // Filter and show only models for the selected provider (OpenAI or Google)
-            const options = modelSelect.querySelectorAll('option');
-            let firstVisibleOption = null;
-            modelSelect.innerHTML = ''; // Clear previous options before adding new ones
+        // Filter and show only models for the selected provider
+        let firstVisibleOption = null;
+        modelSelect.innerHTML = ''; // Clear previous options before adding new ones
 
-            Object.keys(modelOptions).forEach(modelName => {
-                const modelConfig = modelOptions[modelName];
-                if (modelConfig.provider === selectedProvider) {
-                    const option = document.createElement('option');
-                    option.value = modelName;
-                    option.textContent = modelName;
-                    // Add back classes if needed, e.g., for Google models
-                    if (selectedProvider === 'google') {
-                         option.classList.add('google-model');
-                    }
-                    modelSelect.appendChild(option);
-                    if (!firstVisibleOption) {
-                        firstVisibleOption = option;
-                    }
+        Object.keys(modelOptions).forEach(modelName => {
+            const modelConfig = modelOptions[modelName];
+            if (modelConfig.provider === selectedProvider) {
+                const option = document.createElement('option');
+                option.value = modelName;
+                option.textContent = modelName;
+                // Add class for Google models if needed (for potential future styling)
+                if (selectedProvider === 'google') {
+                     option.classList.add('google-model');
                 }
-            });
-
-            // Select the first visible option and update UI
-            if (firstVisibleOption) {
-                modelSelect.value = firstVisibleOption.value;
-                updateOptionsUI(firstVisibleOption.value);
-            } else {
-                 modelSelect.innerHTML = '<option value="">-- No models available --</option>';
-                 // Hide all standard model options if no models found
-                 document.querySelectorAll('.options .option-item').forEach(el => el.style.display = 'none');
+                modelSelect.appendChild(option);
+                if (!firstVisibleOption) {
+                    firstVisibleOption = option;
+                }
             }
+        });
+
+        // Select the first visible option and update UI
+        if (firstVisibleOption) {
+            modelSelect.value = firstVisibleOption.value;
+            updateOptionsUI(firstVisibleOption.value);
+        } else {
+             // This case should only happen if a provider has no models defined
+             // or if the disabled Vertex provider is somehow selected.
+             modelSelect.innerHTML = '<option value="">-- No models available --</option>';
+             modelSelect.disabled = true;
+             // Hide all standard model options
+             document.querySelectorAll('.options .option-item').forEach(el => el.style.display = 'none');
         }
     }
 
@@ -319,6 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
     addTooltipListeners(openaiKeyTooltipTrigger, openaiKeyTooltip);
     addTooltipListeners(googleKeyTooltipTrigger, googleKeyTooltip);
     addTooltipListeners(adobeTooltipTrigger, adobeTooltip); // Apply to Adobe too for consistency
+    addTooltipListeners(vertexTooltipTrigger, vertexTooltip);
 
 
     
