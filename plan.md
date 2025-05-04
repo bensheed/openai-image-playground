@@ -124,7 +124,7 @@ Create a no-code, mobile-optimized web application that allows users to generate
         *   Ensure that when moving/copying, the images retain their `src` (URL or base64 data URI).
         *   Consider adding functionality to clear the camera roll or limit the number of stored images if `localStorage` usage becomes a concern (optional enhancement).
 
-11. **Add Multi-Provider Support:**
+11. **Add Multi-Provider Support & Advanced Imagen Features:**
     *   Add radio buttons at the top of the UI for different image generation providers:
         *   OpenAI models (DALL-E 2, DALL-E 3, GPT-Image-1)
         *   Google Imagen models
@@ -135,10 +135,11 @@ Create a no-code, mobile-optimized web application that allows users to generate
         *   Grey out Adobe Firefly option (not yet supported) with appropriate styling and tooltip.
         *   Update the model dropdown to dynamically show only models from the selected provider.
     *   Implement Google Imagen API integration:
-        *   Add support for Google Imagen API using the Gemini API (https://ai.google.dev/gemini-api/docs/image-generation).
+        *   Add support for Google Imagen API using the Vertex AI Imagen endpoint (or Gemini API if preferred).
         *   Define Google Imagen model options and parameters in the `modelOptions` object in `script.js`.
-        *   Create a new API endpoint constant for Google Imagen API.
+        *   Create API endpoint constants for Google Imagen API.
         *   Implement the API call function for Google Imagen similar to the OpenAI implementation.
+        *   Add basic Google Imagen parameters (Negative Prompt, Seed, Guidance Scale, Style Preset).
     *   Implement API key management for multiple providers:
         *   Modify the API key section to support multiple providers.
         *   Create separate input fields and storage for OpenAI and Google API keys.
@@ -152,6 +153,13 @@ Create a no-code, mobile-optimized web application that allows users to generate
         *   Create container divs for Google Imagen specific options.
         *   Update the `updateOptionsUI` function to show/hide provider-specific options.
         *   Ensure all provider-specific parameters are correctly included in API requests.
+    *   **Future Enhancements (Deferred):**
+        *   **Imagen Model Versions:** Support multiple Imagen model versions (e.g., `imagegeneration@002`, `@003`) by updating `modelOptions`, allowing selection in the UI, and dynamically changing the API endpoint in `script.js`.
+        *   **Imagen Editing Modes:** Implement advanced Imagen capabilities like Image-to-Image, Inpainting, Outpainting, and Conditional Generation. This requires significant UI additions for image uploads, masking tools, etc.
+        *   **Imagen Region/Endpoint:** Allow user selection of Google Cloud region (`us-central1`, etc.) and update the API endpoint accordingly.
+        *   **Imagen Width/Height:** Add explicit width/height inputs as an alternative or complement to aspect ratio.
+        *   **Imagen Minor Params:** Add UI controls for less common parameters like `dynamicThreshold`, `noiseLevel`, `stepCount`, `quality`.
+        *   **Imagen Response Metadata:** Display metadata returned by the API (e.g., seed used, safety ratings, generation time) in the UI.
 
 ## Considerations
 -   **API Costs:** Clearly inform users that generating images incurs costs on their OpenAI account.

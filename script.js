@@ -46,6 +46,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const googleImagenOptions = document.querySelectorAll('.google-imagen-option');
     const aspectRatioSelect = document.getElementById('aspect_ratio');
     const personGenerationSelect = document.getElementById('person_generation');
+    const negativePromptInput = document.getElementById('negative_prompt');
+    const seedInput = document.getElementById('seed');
+    const guidanceScaleInput = document.getElementById('guidance_scale');
+    const stylePresetSelect = document.getElementById('style_preset');
 
     // API Constants
     const OPENAI_API_KEY_NAME = 'openai_api_key';
@@ -557,6 +561,27 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add person generation parameter if not default
         if (personGenerationSelect.value !== 'ALLOW_ADULT') {
             requestBody.parameters.personGeneration = personGenerationSelect.value;
+        }
+
+        // Add negative prompt if provided
+        const negativePrompt = negativePromptInput.value.trim();
+        if (negativePrompt) {
+            requestBody.parameters.negativePrompt = negativePrompt;
+        }
+
+        // Add seed if provided
+        const seed = parseInt(seedInput.value);
+        if (!isNaN(seed)) {
+            requestBody.parameters.seed = seed;
+        }
+
+        // Add guidance scale (always include, use default from input)
+        requestBody.parameters.guidanceScale = parseFloat(guidanceScaleInput.value) || 7.0;
+
+        // Add style preset if selected
+        const stylePreset = stylePresetSelect.value;
+        if (stylePreset) {
+            requestBody.parameters.stylePreset = stylePreset;
         }
 
         console.log('Sending request to Google Imagen:', JSON.stringify(requestBody, null, 2));

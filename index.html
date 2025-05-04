@@ -153,6 +153,44 @@
                     <p class="option-description">Google Imagen only. The aspect ratio of the generated image.</p>
                 </div>
                 <div class="option-item google-imagen-option" style="display: none;">
+                    <label for="negative_prompt">Negative Prompt:</label>
+                    <textarea id="negative_prompt" rows="2" placeholder="Enter elements to exclude..."></textarea>
+                    <p class="option-description">Google Imagen only. Describe what you *don't* want in the image.</p>
+                </div>
+                <div class="option-item google-imagen-option" style="display: none;">
+                    <label for="seed">Seed:</label>
+                    <input type="number" id="seed" placeholder="Leave blank for random">
+                    <p class="option-description">Google Imagen only. Integer for reproducible results.</p>
+                </div>
+                <div class="option-item google-imagen-option" style="display: none;">
+                    <label for="guidance_scale">Guidance Scale:</label>
+                    <input type="number" id="guidance_scale" value="7.0" min="1" max="20" step="0.5">
+                    <p class="option-description">Google Imagen only. How strongly the prompt guides generation (1-20).</p>
+                </div>
+                <div class="option-item google-imagen-option" style="display: none;">
+                    <label for="style_preset">Style Preset:</label>
+                    <select id="style_preset">
+                        <option value="" selected>None</option>
+                        <option value="photographic">Photographic</option>
+                        <option value="digital-art">Digital Art</option>
+                        <option value="cinematic">Cinematic</option>
+                        <option value="anime">Anime</option>
+                        <option value="painterly">Painterly</option>
+                        <option value="pixel-art">Pixel Art</option>
+                        <option value="fantasy">Fantasy</option>
+                        <option value="neon">Neon</option>
+                        <option value="isometric">Isometric</option>
+                        <option value="dystopian">Dystopian</option>
+                        <option value="steampunk">Steampunk</option>
+                        <option value="minimalist">Minimalist</option>
+                        <option value="origami">Origami</option>
+                        <option value="watercolor">Watercolor</option>
+                        <option value="retrowave">Retrowave</option>
+                        <option value="3d-model">3D Model</option>
+                    </select>
+                    <p class="option-description">Google Imagen only. Apply a specific visual style.</p>
+                </div>
+                <div class="option-item google-imagen-option" style="display: none;">
                     <label for="person_generation">Person Generation:</label>
                     <select id="person_generation">
                         <option value="ALLOW_ADULT" selected>Allow Adults</option>
