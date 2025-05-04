@@ -139,7 +139,7 @@ Create a no-code, mobile-optimized web application that allows users to generate
         *   Define Google Imagen model options and parameters in the `modelOptions` object in `script.js`.
         *   Create API endpoint constants for Google Imagen API.
         *   Implement the API call function for Google Imagen similar to the OpenAI implementation.
-        *   Add basic Google Imagen parameters (Negative Prompt, Seed, Guidance Scale, Style Preset).
+        *   Add basic Google Imagen parameters supported by the Gemini API endpoint (Aspect Ratio, Person Generation). (Note: Negative Prompt, Seed, Guidance Scale, Style Preset were found to be unsupported for the `imagen-3.0-generate-002` model via the Gemini API and were removed).
     *   Implement API key management for multiple providers:
         *   Modify the API key section to support multiple providers.
         *   Create separate input fields and storage for OpenAI and Google API keys.
