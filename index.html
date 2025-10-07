@@ -3,43 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Image Playground</title>
+    <title>AI Studio</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>AI Image Generation Playground</h1>
+    <h1>AI Studio</h1>
+    <p class="subtitle">Create images and videos with AI</p>
 
     <div class="container">
-        <section id="provider-selection">
-            <h2>Select Provider</h2>
-            <div class="provider-options">
-                <div class="provider-option">
-                    <input type="radio" id="provider-openai" name="provider" value="openai" checked>
-                    <label for="provider-openai">OpenAI</label>
-                </div>
-                <div class="provider-option">
-                    <input type="radio" id="provider-google" name="provider" value="google">
-                    <label for="provider-google">Google Imagen</label>
-                </div>
-                <div class="provider-option disabled">
-                    <input type="radio" id="provider-vertex-ai" name="provider" value="vertex-ai" disabled>
-                    <label for="provider-vertex-ai" class="disabled-label">Google Vertex AI</label>
-                    <span class="tooltip-icon" id="vertex-tooltip-trigger">ⓘ</span>
-                    <div id="vertex-tooltip" class="tooltip" style="display: none;">
-                        Full Vertex AI support with advanced parameters requires a different setup (e.g., SaaS version). Not available in this playground.
-                    </div>
-                </div>
-                <div class="provider-option disabled">
-                    <input type="radio" id="provider-adobe" name="provider" value="adobe" disabled>
-                    <label for="provider-adobe" class="disabled-label">Adobe Firefly (Coming Soon)</label>
-                    <span class="tooltip-icon" id="adobe-tooltip-trigger">ⓘ</span>
-                    <div id="adobe-tooltip" class="tooltip" style="display: none;">
-                        Adobe Firefly integration is not yet supported. Check back later for updates.
-                    </div>
-                </div>
-            </div>
-        </section>
+        <!-- Tab Navigation -->
+        <nav class="tab-navigation">
+            <button class="tab-button active" data-tab="images">Images</button>
+            <button class="tab-button" data-tab="videos">Videos</button>
+        </nav>
 
+        <!-- Shared API Key Section -->
         <section id="api-key-section">
             <h2>API Keys</h2>
             <div id="openai-key-section">
@@ -65,8 +43,40 @@
             <small>Your keys are stored locally in your browser's localStorage and are not sent anywhere else.</small>
         </section>
 
-        <section id="generation-controls">
-            <h2>Generate Image</h2>
+        <!-- Images Tab Content -->
+        <div id="images-tab" class="tab-content active">
+            <section id="provider-selection">
+                <h2>Select Provider</h2>
+                <div class="provider-options">
+                    <div class="provider-option">
+                        <input type="radio" id="provider-openai" name="provider" value="openai" checked>
+                        <label for="provider-openai">OpenAI</label>
+                    </div>
+                    <div class="provider-option">
+                        <input type="radio" id="provider-google" name="provider" value="google">
+                        <label for="provider-google">Google Imagen</label>
+                    </div>
+                    <div class="provider-option disabled">
+                        <input type="radio" id="provider-vertex-ai" name="provider" value="vertex-ai" disabled>
+                        <label for="provider-vertex-ai" class="disabled-label">Google Vertex AI</label>
+                        <span class="tooltip-icon" id="vertex-tooltip-trigger">ⓘ</span>
+                        <div id="vertex-tooltip" class="tooltip" style="display: none;">
+                            Full Vertex AI support with advanced parameters requires a different setup (e.g., SaaS version). Not available in this playground.
+                        </div>
+                    </div>
+                    <div class="provider-option disabled">
+                        <input type="radio" id="provider-adobe" name="provider" value="adobe" disabled>
+                        <label for="provider-adobe" class="disabled-label">Adobe Firefly (Coming Soon)</label>
+                        <span class="tooltip-icon" id="adobe-tooltip-trigger">ⓘ</span>
+                        <div id="adobe-tooltip" class="tooltip" style="display: none;">
+                            Adobe Firefly integration is not yet supported. Check back later for updates.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="generation-controls">
+                <h2>Generate Image</h2>
 
             <label for="model">Model:</label>
             <select id="model">
@@ -173,16 +183,74 @@
 
 
 
-            <button id="generate-button">Generate Image</button>
-        </section>
+                <button id="generate-button">Generate Image</button>
+            </section>
 
-        <section id="results-section">
-            <h2>Result</h2>
-            <div id="status-message"></div>
-            <div id="image-result">
-                <!-- Generated image will be displayed here -->
-            </div>
-        </section>
+            <section id="results-section">
+                <h2>Result</h2>
+                <div id="status-message"></div>
+                <div id="image-result">
+                    <!-- Generated image will be displayed here -->
+                </div>
+            </section>
+        </div>
+
+        <!-- Videos Tab Content -->
+        <div id="videos-tab" class="tab-content">
+            <section id="video-generation-controls">
+                <h2>Generate Video</h2>
+
+                <label for="video-model">Model:</label>
+                <select id="video-model">
+                    <option value="sora-2" selected>Sora 2 (Fast)</option>
+                    <option value="sora-2-pro">Sora 2 Pro (High Quality)</option>
+                </select>
+
+                <label for="video-prompt">Prompt:</label>
+                <textarea id="video-prompt" rows="4" placeholder="Describe the video you want to create..."></textarea>
+
+                <div class="options">
+                    <div class="option-item">
+                        <label for="video-size">Size:</label>
+                        <select id="video-size">
+                            <option value="1280x720" selected>1280x720 (HD)</option>
+                            <option value="1920x1080">1920x1080 (Full HD)</option>
+                            <option value="720x1280">720x1280 (Portrait HD)</option>
+                            <option value="1080x1920">1080x1920 (Portrait Full HD)</option>
+                            <option value="1024x1024">1024x1024 (Square)</option>
+                        </select>
+                        <p class="option-description">The dimensions of the generated video.</p>
+                    </div>
+
+                    <div class="option-item">
+                        <label for="video-seconds">Duration (seconds):</label>
+                        <select id="video-seconds">
+                            <option value="3">3 seconds</option>
+                            <option value="5" selected>5 seconds</option>
+                            <option value="8">8 seconds</option>
+                            <option value="10">10 seconds</option>
+                        </select>
+                        <p class="option-description">Length of the generated video.</p>
+                    </div>
+
+                    <div class="option-item">
+                        <label for="input-reference">Input Reference Image (optional):</label>
+                        <input type="file" id="input-reference" accept="image/jpeg,image/png,image/webp">
+                        <p class="option-description">Upload an image to use as the first frame of your video.</p>
+                    </div>
+                </div>
+
+                <button id="generate-video-button">Generate Video</button>
+            </section>
+
+            <section id="video-results-section">
+                <h2>Result</h2>
+                <div id="video-status-message"></div>
+                <div id="video-result">
+                    <!-- Generated video will be displayed here -->
+                </div>
+            </section>
+        </div>
     </div>
 
     <script src="script.js"></script>

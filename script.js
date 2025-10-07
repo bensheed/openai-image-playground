@@ -1,646 +1,865 @@
+// AI Studio - Modular Architecture for Images and Videos
+// Built with future camera roll support in mind
+
 document.addEventListener('DOMContentLoaded', () => {
-    // --- DOM Elements ---
-    // Provider Selection
-    const providerRadios = document.querySelectorAll('input[name="provider"]');
-    const openaiKeySection = document.getElementById('openai-key-section');
-    const googleKeySection = document.getElementById('google-key-section');
-    const adobeTooltipTrigger = document.getElementById('adobe-tooltip-trigger');
-    const adobeTooltip = document.getElementById('adobe-tooltip');
-    const vertexTooltipTrigger = document.getElementById('vertex-tooltip-trigger');
-    const vertexTooltip = document.getElementById('vertex-tooltip');
-    
+    // Initialize the application
+    const app = new AIStudio();
+    app.init();
+});
 
-    // API Keys
-    // API Key Tooltips
-    const openaiKeyTooltipTrigger = document.getElementById('openai-key-tooltip-trigger');
-    const openaiKeyTooltip = document.getElementById('openai-key-tooltip');
-    const googleKeyTooltipTrigger = document.getElementById('google-key-tooltip-trigger');
-    const googleKeyTooltip = document.getElementById('google-key-tooltip');
-    const openaiApiKeyInput = document.getElementById('openai-api-key');
-    const saveOpenaiKeyButton = document.getElementById('save-openai-key-button');
-    const openaiKeyStatus = document.getElementById('openai-key-status');
-    const googleApiKeyInput = document.getElementById('google-api-key');
-    const saveGoogleKeyButton = document.getElementById('save-google-key-button');
-    const googleKeyStatus = document.getElementById('google-key-status');
-    
-    // Generation Controls
-    const modelSelect = document.getElementById('model');
-    const promptInput = document.getElementById('prompt');
-    const sizeSelect = document.getElementById('size');
-    const qualitySelect = document.getElementById('quality');
-    const nInput = document.getElementById('n');
-    const generateButton = document.getElementById('generate-button');
-    const statusMessage = document.getElementById('status-message');
-    const nDescription = document.getElementById('n-description');
-    const imageResultDiv = document.getElementById('image-result');
-
-    // Model Specific Option Containers & Controls
-    const dalle3OptionsDiv = document.getElementById('dalle3-options');
-    const styleSelect = document.getElementById('style');
-
-    // GPT-Image-1 Specific Options
-    const gptImage1Options = document.querySelectorAll('.gpt-image-1-option');
-    const backgroundSelect = document.getElementById('background');
-    const moderationSelect = document.getElementById('moderation');
-    const outputFormatSelect = document.getElementById('output_format');
-    const outputCompressionInput = document.getElementById('output_compression');
-    
-    // Google Imagen Specific Options
-    const googleImagenOptions = document.querySelectorAll('.google-imagen-option');
-    const aspectRatioSelect = document.getElementById('aspect_ratio');
-    const personGenerationSelect = document.getElementById('person_generation');
-
-
-
-    // API Constants
-    const OPENAI_API_KEY_NAME = 'openai_api_key';
-    const GOOGLE_API_KEY_NAME = 'google_api_key';
-    const OPENAI_API_ENDPOINT = 'https://api.openai.com/v1/images/generations';
-    const GOOGLE_IMAGEN_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict';
-
-    // --- Model Parameter Definitions ---
-    const modelOptions = {
-        // OpenAI Models
-        "gpt-image-1": {
-            provider: "openai",
-            sizes: ["auto", "1024x1024", "1536x1024", "1024x1536"],
-            qualities: ["auto", "high", "medium", "low"],
-            maxN: 10,
-            supportsStyle: false,
-            supportsBackground: true,
-            supportsModeration: true,
-            supportsOutputFormat: true,
-            supportsOutputCompression: true, // Depends on output_format
-            responseFormat: 'b64_json', // Implicitly b64
-            apiEndpoint: OPENAI_API_ENDPOINT
-        },
-        "dall-e-3": {
-            provider: "openai",
-            sizes: ["1024x1024", "1792x1024", "1024x1792"],
-            qualities: ["standard", "hd"],
-            maxN: 1,
-            supportsStyle: true,
-            supportsBackground: false,
-            supportsModeration: false,
-            supportsOutputFormat: false,
-            supportsOutputCompression: false,
-            responseFormat: 'url',
-            apiEndpoint: OPENAI_API_ENDPOINT
-        },
-        "dall-e-2": {
-            provider: "openai",
-            sizes: ["256x256", "512x512", "1024x1024"],
-            qualities: ["standard"],
-            maxN: 10,
-            supportsStyle: false,
-            supportsBackground: false,
-            supportsModeration: false,
-            supportsOutputFormat: false,
-            supportsOutputCompression: false,
-            responseFormat: 'url',
-            apiEndpoint: OPENAI_API_ENDPOINT
-        },
+class AIStudio {
+    constructor() {
+        // Core modules
+        this.tabManager = new TabManager();
+        this.apiKeyManager = new APIKeyManager();
+        this.imageGenerator = new ImageGenerator();
+        this.videoGenerator = new VideoGenerator();
+        this.mediaLibrary = new MediaLibrary(); // Foundation for future camera roll
         
-        // Google Imagen (Gemini API) Model
-        "imagen-3.0-generate-002": {
-            provider: "google", // Corresponds to the "Google Imagen" radio button
-            sizes: [], // Controlled by aspect ratio instead
-            qualities: [], // Not applicable
-            maxN: 4, // Google Imagen supports 1-4 images
-            supportsStyle: false,
-            supportsBackground: false,
-            supportsModeration: false,
-            supportsOutputFormat: false,
-            supportsOutputCompression: false,
-            supportsAspectRatio: true,
-            supportsPersonGeneration: true,
-            responseFormat: 'b64_json',
-            apiEndpoint: GOOGLE_IMAGEN_API_ENDPOINT // Gemini API endpoint
+        // Shared state
+        this.currentTab = 'images';
+    }
+
+    init() {
+        this.tabManager.init();
+        this.apiKeyManager.init();
+        this.imageGenerator.init();
+        this.videoGenerator.init();
+        this.mediaLibrary.init();
+        
+        // Set up tab switching
+        this.tabManager.onTabChange((tabName) => {
+            this.currentTab = tabName;
+            this.handleTabChange(tabName);
+        });
+    }
+
+    handleTabChange(tabName) {
+        // Update provider visibility based on tab
+        if (tabName === 'images') {
+            this.apiKeyManager.showProviderOptions(['openai', 'google']);
+        } else if (tabName === 'videos') {
+            this.apiKeyManager.showProviderOptions(['openai']);
         }
-    };
+    }
+}
 
-    // --- Provider Selection Function ---
-    function updateProviderUI(selectedProvider) {
-        console.log(`Updating UI for provider: ${selectedProvider}`);
-        
-        // Show/hide API key sections based on provider
-        openaiKeySection.style.display = selectedProvider === 'openai' ? 'block' : 'none';
-        googleKeySection.style.display = selectedProvider === 'google' ? 'block' : 'none';
-        // Note: Vertex AI is disabled, so no specific key section handling needed here.
+// Tab Management Module
+class TabManager {
+    constructor() {
+        this.activeTab = 'images';
+        this.tabButtons = document.querySelectorAll('.tab-button');
+        this.tabContents = document.querySelectorAll('.tab-content');
+        this.onTabChangeCallback = null;
+    }
 
-        // Enable/disable generate button
-        // The button should be enabled unless a disabled provider is somehow selected
-        const selectedProviderInput = document.querySelector(`input[name="provider"][value="${selectedProvider}"]`);
-        generateButton.disabled = selectedProviderInput?.disabled || false;
-        generateButton.textContent = 'Generate Image';
-        if (generateButton.disabled) {
-             generateButton.textContent = 'Generate Image (Provider N/A)';
-        }
-        
-        // Clear status message
-        statusMessage.textContent = ''; 
-        modelSelect.disabled = false;
+    init() {
+        this.tabButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                const tabName = e.target.dataset.tab;
+                this.switchTab(tabName);
+            });
+        });
+    }
 
-        // Filter and show only models for the selected provider
-        let firstVisibleOption = null;
-        modelSelect.innerHTML = ''; // Clear previous options before adding new ones
-
-        Object.keys(modelOptions).forEach(modelName => {
-            const modelConfig = modelOptions[modelName];
-            if (modelConfig.provider === selectedProvider) {
-                const option = document.createElement('option');
-                option.value = modelName;
-                option.textContent = modelName;
-                // Add class for Google models if needed (for potential future styling)
-                if (selectedProvider === 'google') {
-                     option.classList.add('google-model');
-                }
-                modelSelect.appendChild(option);
-                if (!firstVisibleOption) {
-                    firstVisibleOption = option;
-                }
-            }
+    switchTab(tabName) {
+        // Update button states
+        this.tabButtons.forEach(button => {
+            button.classList.toggle('active', button.dataset.tab === tabName);
         });
 
-        // Select the first visible option and update UI
-        if (firstVisibleOption) {
-            modelSelect.value = firstVisibleOption.value;
-            updateOptionsUI(firstVisibleOption.value);
-        } else {
-             // This case should only happen if a provider has no models defined
-             // or if the disabled Vertex provider is somehow selected.
-             modelSelect.innerHTML = '<option value="">-- No models available --</option>';
-             modelSelect.disabled = true;
-             // Hide all standard model options
-             document.querySelectorAll('.options .option-item').forEach(el => el.style.display = 'none');
+        // Update content visibility
+        this.tabContents.forEach(content => {
+            content.classList.toggle('active', content.id === `${tabName}-tab`);
+        });
+
+        this.activeTab = tabName;
+        
+        if (this.onTabChangeCallback) {
+            this.onTabChangeCallback(tabName);
         }
     }
 
-    // --- UI Update Function ---
-    function updateOptionsUI(selectedModel) {
-        console.log(`Updating UI for model: ${selectedModel}`);
-        const options = modelOptions[selectedModel];
-        if (!options) {
-            console.error("Invalid model selected");
-            return;
-        }
+    onTabChange(callback) {
+        this.onTabChangeCallback = callback;
+    }
+}
 
-        // Show/Hide Provider-Specific Options
-        const isGoogleModel = options.provider === 'google';
+// API Key Management Module
+class APIKeyManager {
+    constructor() {
+        this.keys = {
+            openai: null,
+            google: null
+        };
         
-        // Show/hide Google Imagen specific options
-        googleImagenOptions.forEach(el => {
-            el.style.display = isGoogleModel ? 'block' : 'none';
+        // DOM elements
+        this.openaiKeyInput = document.getElementById('openai-api-key');
+        this.googleKeyInput = document.getElementById('google-api-key');
+        this.saveOpenaiButton = document.getElementById('save-openai-key-button');
+        this.saveGoogleButton = document.getElementById('save-google-key-button');
+        this.openaiKeyStatus = document.getElementById('openai-key-status');
+        this.googleKeyStatus = document.getElementById('google-key-status');
+        this.openaiKeySection = document.getElementById('openai-key-section');
+        this.googleKeySection = document.getElementById('google-key-section');
+        
+        // Constants
+        this.OPENAI_KEY_NAME = 'openai_api_key';
+        this.GOOGLE_KEY_NAME = 'google_api_key';
+    }
+
+    init() {
+        this.loadKeys();
+        this.setupEventListeners();
+        this.setupTooltips();
+    }
+
+    setupEventListeners() {
+        this.saveOpenaiButton.addEventListener('click', () => this.saveKey('openai'));
+        this.saveGoogleButton.addEventListener('click', () => this.saveKey('google'));
+    }
+
+    setupTooltips() {
+        // Tooltip functionality for API key help
+        const tooltips = [
+            { trigger: 'openai-key-tooltip-trigger', tooltip: 'openai-key-tooltip' },
+            { trigger: 'google-key-tooltip-trigger', tooltip: 'google-key-tooltip' }
+        ];
+
+        tooltips.forEach(({ trigger, tooltip }) => {
+            const triggerEl = document.getElementById(trigger);
+            const tooltipEl = document.getElementById(tooltip);
+            
+            if (triggerEl && tooltipEl) {
+                triggerEl.addEventListener('mouseenter', () => {
+                    tooltipEl.style.display = 'block';
+                });
+                triggerEl.addEventListener('mouseleave', () => {
+                    tooltipEl.style.display = 'none';
+                });
+            }
+        });
+    }
+
+    loadKeys() {
+        this.keys.openai = localStorage.getItem(this.OPENAI_KEY_NAME);
+        this.keys.google = localStorage.getItem(this.GOOGLE_KEY_NAME);
+        
+        if (this.keys.openai) {
+            this.openaiKeyInput.value = this.keys.openai;
+            this.openaiKeyStatus.textContent = 'Status: Key loaded.';
+            this.openaiKeyStatus.style.color = 'green';
+        }
+        
+        if (this.keys.google) {
+            this.googleKeyInput.value = this.keys.google;
+            this.googleKeyStatus.textContent = 'Status: Key loaded.';
+            this.googleKeyStatus.style.color = 'green';
+        }
+    }
+
+    saveKey(provider) {
+        const input = provider === 'openai' ? this.openaiKeyInput : this.googleKeyInput;
+        const status = provider === 'openai' ? this.openaiKeyStatus : this.googleKeyStatus;
+        const keyName = provider === 'openai' ? this.OPENAI_KEY_NAME : this.GOOGLE_KEY_NAME;
+        
+        const key = input.value.trim();
+        
+        if (key) {
+            localStorage.setItem(keyName, key);
+            this.keys[provider] = key;
+            status.textContent = 'Status: Key saved successfully.';
+            status.style.color = 'green';
+        } else {
+            localStorage.removeItem(keyName);
+            this.keys[provider] = null;
+            status.textContent = 'Status: Key removed.';
+            status.style.color = 'orange';
+        }
+    }
+
+    getKey(provider) {
+        return this.keys[provider];
+    }
+
+    showProviderOptions(providers) {
+        // Show/hide provider-specific key sections
+        this.openaiKeySection.style.display = providers.includes('openai') ? 'block' : 'none';
+        this.googleKeySection.style.display = providers.includes('google') ? 'block' : 'none';
+    }
+}
+
+// Image Generation Module
+class ImageGenerator {
+    constructor() {
+        // DOM elements
+        this.providerRadios = document.querySelectorAll('input[name="provider"]');
+        this.modelSelect = document.getElementById('model');
+        this.promptInput = document.getElementById('prompt');
+        this.sizeSelect = document.getElementById('size');
+        this.qualitySelect = document.getElementById('quality');
+        this.nInput = document.getElementById('n');
+        this.generateButton = document.getElementById('generate-button');
+        this.statusMessage = document.getElementById('status-message');
+        this.imageResultDiv = document.getElementById('image-result');
+        
+        // Model-specific options
+        this.dalle3Options = document.getElementById('dalle3-options');
+        this.styleSelect = document.getElementById('style');
+        this.gptImage1Options = document.querySelectorAll('.gpt-image-1-option');
+        this.googleImagenOptions = document.querySelectorAll('.google-imagen-option');
+        
+        // Model configurations
+        this.modelOptions = {
+            "gpt-image-1": {
+                provider: "openai",
+                sizes: ["auto", "1024x1024", "1536x1024", "1024x1536"],
+                qualities: ["auto", "high", "medium", "low"],
+                maxN: 10,
+                supportsStyle: false,
+                apiEndpoint: 'https://api.openai.com/v1/images/generations'
+            },
+            "dall-e-3": {
+                provider: "openai",
+                sizes: ["1024x1024", "1792x1024", "1024x1792"],
+                qualities: ["standard", "hd"],
+                maxN: 1,
+                supportsStyle: true,
+                apiEndpoint: 'https://api.openai.com/v1/images/generations'
+            },
+            "dall-e-2": {
+                provider: "openai",
+                sizes: ["256x256", "512x512", "1024x1024"],
+                qualities: ["standard"],
+                maxN: 10,
+                supportsStyle: false,
+                apiEndpoint: 'https://api.openai.com/v1/images/generations'
+            },
+            "imagen-3.0-generate-002": {
+                provider: "google",
+                sizes: ["1:1", "3:4", "4:3", "9:16", "16:9"],
+                qualities: ["standard"],
+                maxN: 4,
+                supportsStyle: false,
+                apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict'
+            }
+        };
+    }
+
+    init() {
+        this.setupEventListeners();
+        this.updateUI();
+    }
+
+    setupEventListeners() {
+        this.providerRadios.forEach(radio => {
+            radio.addEventListener('change', () => this.updateProviderUI());
         });
         
-        // For OpenAI models, handle size dropdown
-        const sizeContainer = sizeSelect.closest('div');
-        if (isGoogleModel) {
-            // For Google models, hide size dropdown as it uses aspect ratio instead
-            sizeContainer.style.display = 'none';
-        } else {
-            // For OpenAI models, show and populate size dropdown
-            sizeContainer.style.display = 'block';
-            
-            // Populate Size Dropdown
-            sizeSelect.innerHTML = ''; // Clear existing options
-            options.sizes.forEach(size => {
-                const option = document.createElement('option');
-                option.value = size;
-                option.textContent = size === 'auto' ? 'Auto' : size;
-                sizeSelect.appendChild(option);
-            });
-            // Set default or preserve selection if possible
-            sizeSelect.value = options.sizes.includes(sizeSelect.value) ? sizeSelect.value : options.sizes[0];
-        }
+        this.modelSelect.addEventListener('change', () => this.updateModelUI());
+        this.generateButton.addEventListener('click', () => this.generateImage());
+    }
 
-        // Populate Quality Dropdown
-        const qualityContainer = qualitySelect.closest('div'); // Get the parent div
-        if (isGoogleModel || selectedModel === 'dall-e-2') {
-            qualityContainer.style.display = 'none'; // Hide for Google models and DALL-E 2
-        } else {
-            qualityContainer.style.display = 'block'; // Show for others
-            qualitySelect.innerHTML = ''; // Clear existing options
-            options.qualities.forEach(quality => {
-                const option = document.createElement('option');
-                option.value = quality;
-                option.textContent = quality.charAt(0).toUpperCase() + quality.slice(1); // Capitalize
-                qualitySelect.appendChild(option);
-            });
-            // Set default or preserve selection if possible
-            qualitySelect.value = options.qualities.includes(qualitySelect.value) ? qualitySelect.value : options.qualities[0];
-        }
+    updateUI() {
+        this.updateProviderUI();
+        this.updateModelUI();
+    }
 
-        // Populate N Dropdown
-        const nSelect = nInput; // Re-using the variable name, but it's the select element now
-        const currentNValue = parseInt(nSelect.value); // Store current value before clearing
-        nSelect.innerHTML = ''; // Clear existing options
-        for (let i = 1; i <= options.maxN; i++) {
+    updateProviderUI() {
+        const selectedProvider = document.querySelector('input[name="provider"]:checked')?.value;
+        
+        // Show/hide models based on provider
+        Array.from(this.modelSelect.options).forEach(option => {
+            const modelConfig = this.modelOptions[option.value];
+            if (modelConfig) {
+                option.style.display = modelConfig.provider === selectedProvider ? 'block' : 'none';
+            }
+        });
+        
+        // Select first visible model
+        const firstVisibleOption = Array.from(this.modelSelect.options)
+            .find(option => option.style.display !== 'none');
+        if (firstVisibleOption) {
+            this.modelSelect.value = firstVisibleOption.value;
+        }
+        
+        this.updateModelUI();
+    }
+
+    updateModelUI() {
+        const selectedModel = this.modelSelect.value;
+        const modelConfig = this.modelOptions[selectedModel];
+        
+        if (!modelConfig) return;
+        
+        // Update size options
+        this.sizeSelect.innerHTML = '';
+        modelConfig.sizes.forEach(size => {
+            const option = document.createElement('option');
+            option.value = size;
+            option.textContent = size;
+            this.sizeSelect.appendChild(option);
+        });
+        
+        // Update quality options
+        this.qualitySelect.innerHTML = '';
+        modelConfig.qualities.forEach(quality => {
+            const option = document.createElement('option');
+            option.value = quality;
+            option.textContent = quality.charAt(0).toUpperCase() + quality.slice(1);
+            this.qualitySelect.appendChild(option);
+        });
+        
+        // Update n options
+        this.nInput.innerHTML = '';
+        for (let i = 1; i <= modelConfig.maxN; i++) {
             const option = document.createElement('option');
             option.value = i;
             option.textContent = i;
-            nSelect.appendChild(option);
+            this.nInput.appendChild(option);
         }
-        // Try to restore previous selection if valid, otherwise default to 1
-        if (currentNValue >= 1 && currentNValue <= options.maxN) {
-            nSelect.value = currentNValue;
-        } else {
-            nSelect.value = 1;
-        }
-        nSelect.disabled = options.maxN === 1; // Disable dropdown if only 1 option
-
-        // Update N description
-        if (nDescription) {
-            let descriptionText = `How many images to generate (1-${options.maxN}).`;
-            if (selectedModel === 'dall-e-3') {
-                descriptionText += " DALL-E 3 only supports 1.";
-            } else if (options.provider === 'google') {
-                descriptionText += ` Google Imagen supports 1-${options.maxN}.`;
-            } else if (selectedModel === 'gpt-image-1') {
-                 descriptionText += ` Max ${options.maxN}.`;
-            } else if (selectedModel === 'dall-e-2') {
-                 descriptionText += ` Max ${options.maxN}.`;
-            }
-            nDescription.textContent = descriptionText;
-        }
-
-        // Show/Hide OpenAI Model Specific Sections
-        dalle3OptionsDiv.style.display = options.supportsStyle ? 'block' : 'none';
         
-        // Show/Hide GPT-Image-1 specific options individually
-        const showGpt1Options = selectedModel === 'gpt-image-1';
-        gptImage1Options.forEach(el => {
-            el.style.display = showGpt1Options ? 'block' : 'none';
+        // Show/hide model-specific options
+        this.dalle3Options.style.display = selectedModel === 'dall-e-3' ? 'block' : 'none';
+        
+        this.gptImage1Options.forEach(option => {
+            option.style.display = selectedModel === 'gpt-image-1' ? 'block' : 'none';
         });
-
-        // If showing GPT-1 options, handle compression input visibility/disable state
-        if (showGpt1Options) {
-            const compressionEnabled = options.supportsOutputCompression && ['jpeg', 'webp'].includes(outputFormatSelect.value);
-            outputCompressionInput.disabled = !compressionEnabled;
-        }
-    }
-
-    // --- Event Listeners ---
-    // Provider selection change
-    providerRadios.forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                updateProviderUI(e.target.value);
-            }
+        
+        this.googleImagenOptions.forEach(option => {
+            option.style.display = modelConfig.provider === 'google' ? 'block' : 'none';
         });
-    });
-    
-
-
-    // --- Tooltip Hide Delay Logic ---
-    let hideTimeout;
-
-    function showTooltip(tooltipElement) {
-        clearTimeout(hideTimeout);
-        tooltipElement.style.display = 'block';
     }
 
-    function hideTooltip(tooltipElement) {
-        hideTimeout = setTimeout(() => {
-            tooltipElement.style.display = 'none';
-        }, 100); // Delay hiding slightly
-    }
-
-    // Helper to add listeners
-    function addTooltipListeners(triggerElement, tooltipElement) {
-        if (triggerElement && tooltipElement) {
-            console.log(`Attaching tooltip listeners for: ${tooltipElement.id}`);
-            triggerElement.addEventListener('mouseover', () => {
-                console.log(`${tooltipElement.id} - trigger mouseover`);
-                showTooltip(tooltipElement);
-            });
-            triggerElement.addEventListener('mouseout', () => {
-                console.log(`${tooltipElement.id} - trigger mouseout`);
-                hideTooltip(tooltipElement);
-            });
-            tooltipElement.addEventListener('mouseover', () => {
-                console.log(`${tooltipElement.id} - tooltip mouseover`);
-                clearTimeout(hideTimeout); // Cancel hide if mouse enters tooltip
-            });
-            tooltipElement.addEventListener('mouseout', () => {
-                console.log(`${tooltipElement.id} - tooltip mouseout`);
-                hideTooltip(tooltipElement); // Hide when mouse leaves tooltip too
-            });
-        } else {
-            console.warn(`Tooltip elements not found for trigger/tooltip pair.`);
-        }
-    }
-
-    // Add listeners for specific tooltips
-    addTooltipListeners(openaiKeyTooltipTrigger, openaiKeyTooltip);
-    addTooltipListeners(googleKeyTooltipTrigger, googleKeyTooltip);
-    addTooltipListeners(adobeTooltipTrigger, adobeTooltip); // Apply to Adobe too for consistency
-    addTooltipListeners(vertexTooltipTrigger, vertexTooltip);
-
-
-    
-    // Update UI when model changes
-    modelSelect.addEventListener('change', (e) => {
-        updateOptionsUI(e.target.value);
-    });
-
-    // Update compression enable/disable when output format changes (only if gpt-image-1 is active)
-    outputFormatSelect.addEventListener('change', (e) => {
-        if (modelSelect.value === 'gpt-image-1') {
-             const compressionEnabled = ['jpeg', 'webp'].includes(e.target.value);
-             outputCompressionInput.disabled = !compressionEnabled;
-        }
-    });
-
-    // --- API Key Handling ---
-    function loadApiKeys() {
-        // Load OpenAI API Key
-        const savedOpenaiKey = localStorage.getItem(OPENAI_API_KEY_NAME);
-        if (savedOpenaiKey) {
-            openaiApiKeyInput.value = savedOpenaiKey;
-            openaiKeyStatus.textContent = 'Status: Key loaded from localStorage.';
-            openaiKeyStatus.style.color = 'green';
-        } else {
-            openaiKeyStatus.textContent = 'Status: No key saved. Please enter your key.';
-            openaiKeyStatus.style.color = 'red';
-        }
+    async generateImage() {
+        const selectedModel = this.modelSelect.value;
+        const modelConfig = this.modelOptions[selectedModel];
+        const prompt = this.promptInput.value.trim();
         
-        // Load Google API Key
-        const savedGoogleKey = localStorage.getItem(GOOGLE_API_KEY_NAME);
-        if (savedGoogleKey) {
-            googleApiKeyInput.value = savedGoogleKey;
-            googleKeyStatus.textContent = 'Status: Key loaded from localStorage.';
-            googleKeyStatus.style.color = 'green';
-        } else {
-            googleKeyStatus.textContent = 'Status: No key saved. Please enter your key.';
-            googleKeyStatus.style.color = 'red';
-        }
-    }
-
-    function saveOpenaiApiKey() {
-        const apiKey = openaiApiKeyInput.value.trim();
-        if (apiKey) {
-            localStorage.setItem(OPENAI_API_KEY_NAME, apiKey);
-            openaiKeyStatus.textContent = 'Status: Key saved successfully!';
-            openaiKeyStatus.style.color = 'green';
-            console.log('OpenAI API Key saved to localStorage.');
-        } else {
-            localStorage.removeItem(OPENAI_API_KEY_NAME); // Remove if empty
-            openaiKeyStatus.textContent = 'Status: API Key field is empty. Key removed.';
-            openaiKeyStatus.style.color = 'orange';
-            console.log('OpenAI API Key removed from localStorage.');
-        }
-    }
-    
-    function saveGoogleApiKey() {
-        const apiKey = googleApiKeyInput.value.trim();
-        if (apiKey) {
-            localStorage.setItem(GOOGLE_API_KEY_NAME, apiKey);
-            googleKeyStatus.textContent = 'Status: Key saved successfully!';
-            googleKeyStatus.style.color = 'green';
-            console.log('Google API Key saved to localStorage.');
-        } else {
-            localStorage.removeItem(GOOGLE_API_KEY_NAME); // Remove if empty
-            googleKeyStatus.textContent = 'Status: API Key field is empty. Key removed.';
-            googleKeyStatus.style.color = 'orange';
-            console.log('Google API Key removed from localStorage.');
-        }
-    }
-
-    // Event listeners for the save buttons
-    saveOpenaiKeyButton.addEventListener('click', saveOpenaiApiKey);
-    saveGoogleKeyButton.addEventListener('click', saveGoogleApiKey);
-
-    // Load the API keys when the page loads
-    loadApiKeys();
-
-    // Initialize UI based on default provider and model selection
-    updateProviderUI('openai');
-    updateOptionsUI(modelSelect.value);
-
-    // --- Image Generation Logic ---
-    generateButton.addEventListener('click', async () => {
-        const selectedModel = modelSelect.value;
-        const modelConfig = modelOptions[selectedModel];
-        const prompt = promptInput.value.trim();
-        const selectedProvider = modelConfig.provider;
+        // Get API key
+        const apiKey = window.app?.apiKeyManager?.getKey(modelConfig.provider);
         
-        // Get the appropriate API key based on the provider
-        let apiKey;
-        if (selectedProvider === 'openai') {
-            apiKey = localStorage.getItem(OPENAI_API_KEY_NAME);
-        } else if (selectedProvider === 'google') {
-            apiKey = localStorage.getItem(GOOGLE_API_KEY_NAME);
-        }
-
-        // --- Input Validation ---
         if (!apiKey) {
-            statusMessage.textContent = `Error: ${selectedProvider.charAt(0).toUpperCase() + selectedProvider.slice(1)} API Key not found. Please save your key first.`;
-            statusMessage.style.color = 'red';
+            this.showStatus(`Error: ${modelConfig.provider.charAt(0).toUpperCase() + modelConfig.provider.slice(1)} API Key not found.`, 'error');
             return;
         }
+        
         if (!prompt) {
-            statusMessage.textContent = 'Error: Please enter a prompt.';
-            statusMessage.style.color = 'red';
+            this.showStatus('Error: Please enter a prompt.', 'error');
             return;
         }
-        if (!modelConfig) {
-             statusMessage.textContent = 'Error: Invalid model selected.';
-             statusMessage.style.color = 'red';
-             return;
-        }
-
-        // --- Prepare for API Call ---
-        statusMessage.textContent = 'Generating image(s)... Please wait.';
-        statusMessage.style.color = 'blue';
-        imageResultDiv.innerHTML = ''; // Clear previous images
-        generateButton.disabled = true;
-        generateButton.textContent = 'Generating...';
-
+        
+        this.showStatus('Generating image... Please wait.', 'loading');
+        this.generateButton.disabled = true;
+        this.generateButton.textContent = 'Generating...';
+        this.imageResultDiv.innerHTML = '';
+        
         try {
-            if (selectedProvider === 'openai') {
-                await generateOpenAIImage(apiKey, selectedModel, modelConfig, prompt);
-            } else if (selectedProvider === 'google') {
-                await generateGoogleImage(apiKey, selectedModel, modelConfig, prompt);
+            if (modelConfig.provider === 'openai') {
+                await this.generateOpenAIImage(apiKey, selectedModel, modelConfig, prompt);
+            } else if (modelConfig.provider === 'google') {
+                await this.generateGoogleImage(apiKey, selectedModel, modelConfig, prompt);
             }
         } catch (error) {
-            console.error(`Error generating image with ${selectedProvider}:`, error);
-            let displayErrorMessage = `Error: ${error.message}`;
-            
-            // Provider-specific error handling
-            if (selectedProvider === 'openai' && (error.message.includes('Error in request') || error.message.includes('check your input') || error.message.includes('400'))) {
-                displayErrorMessage += '\n\n(This might be due to insufficient credits or account limits. Check your balance: https://platform.openai.com/settings/organization/billing/overview)';
-            } else if (selectedProvider === 'google') {
-                displayErrorMessage += '\n\n(Make sure your Google API key has access to the Gemini API and check your quota limits)';
-            }
-            
-            statusMessage.textContent = displayErrorMessage;
-            statusMessage.style.color = 'red';
+            console.error('Error generating image:', error);
+            this.showStatus(`Error: ${error.message}`, 'error');
         } finally {
-            // --- Reset UI State ---
-            generateButton.disabled = false;
-            generateButton.textContent = 'Generate Image';
+            this.generateButton.disabled = false;
+            this.generateButton.textContent = 'Generate Image';
         }
-    });
-    
-    // --- OpenAI Image Generation Function ---
-    async function generateOpenAIImage(apiKey, selectedModel, modelConfig, prompt) {
-        // --- Construct API Request Body Dynamically ---
+    }
+
+    async generateOpenAIImage(apiKey, model, modelConfig, prompt) {
         const requestBody = {
-            model: selectedModel,
+            model: model,
             prompt: prompt,
-            n: parseInt(nInput.value) || 1, // Common parameter
+            n: parseInt(this.nInput.value) || 1
         };
-
-        // --- Add Model-Specific Parameters ---
-        if (selectedModel === 'dall-e-3') {
-            // DALL-E 3 requires size, quality, style. n is always 1 (handled by UI).
-            requestBody.size = sizeSelect.value;
-            requestBody.quality = qualitySelect.value;
-            requestBody.style = styleSelect.value;
-            // response_format defaults to 'url', which is fine.
-        } else if (selectedModel === 'dall-e-2') {
-            // DALL-E 2 requires size. n can be > 1.
-            requestBody.size = sizeSelect.value;
-            // quality is not applicable. response_format defaults to 'url'.
-        } else if (selectedModel === 'gpt-image-1') {
-            // gpt-image-1 has many optional parameters.
-            // Size is optional (defaults to auto)
-            if (sizeSelect.value !== 'auto') {
-                requestBody.size = sizeSelect.value;
-            }
-            // Quality is optional (defaults to auto)
-            if (qualitySelect.value !== 'auto') {
-                requestBody.quality = qualitySelect.value;
-            }
-            // Background is optional (defaults to auto)
-            if (backgroundSelect.value !== 'auto') {
-                requestBody.background = backgroundSelect.value;
-            }
-            // Moderation is optional (defaults to auto)
-            if (moderationSelect.value !== 'auto') {
-                requestBody.moderation = moderationSelect.value;
-            }
-            // Output format is optional (defaults to png)
-            if (outputFormatSelect.value !== 'png') {
-                requestBody.output_format = outputFormatSelect.value;
-                // Compression only applies if format is jpeg/webp
-                if (['jpeg', 'webp'].includes(requestBody.output_format)) {
-                    requestBody.output_compression = parseInt(outputCompressionInput.value);
-                }
-            }
-            // response_format is implicitly b64_json.
+        
+        // Add model-specific parameters
+        if (model === 'dall-e-3') {
+            requestBody.size = this.sizeSelect.value;
+            requestBody.quality = this.qualitySelect.value;
+            requestBody.style = this.styleSelect.value;
+        } else if (model === 'dall-e-2') {
+            requestBody.size = this.sizeSelect.value;
+        } else if (model === 'gpt-image-1') {
+            requestBody.size = this.sizeSelect.value;
+            requestBody.quality = this.qualitySelect.value;
+            // Add other gpt-image-1 specific parameters
         }
-
-        console.log('Sending request to OpenAI:', JSON.stringify(requestBody, null, 2));
-
-        // --- Make API Call ---
-        const response = await fetch(OPENAI_API_ENDPOINT, {
+        
+        const response = await fetch(modelConfig.apiEndpoint, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(requestBody)
         });
-
-        const data = await response.json();
-        console.log('Received response from OpenAI:', data);
-
+        
         if (!response.ok) {
-            const errorMessage = data.error?.message || `HTTP error! Status: ${response.status}`;
-            throw new Error(errorMessage);
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error?.message || `HTTP ${response.status}`);
         }
-
-        if (data.data && data.data.length > 0) {
-            // Determine expected format for processing
-            const expectedFormat = modelConfig.responseFormat; // 'url' or 'b64_json'
-
-            data.data.forEach((item, index) => {
-                const imgElement = document.createElement('img');
-                imgElement.alt = `Generated image ${index + 1} for: ${prompt}`;
-
-                if (expectedFormat === 'url' && item.url) {
-                    imgElement.src = item.url;
-                } else if (expectedFormat === 'b64_json' && item.b64_json) {
-                    // For b64, determine the image type from the user's selection (or default)
-                    const imageType = requestBody.output_format || 'png'; // Use selected format, default to png
-                    imgElement.src = `data:image/${imageType};base64,${item.b64_json}`;
-                } else {
-                    console.warn(`Item ${index} in response did not contain expected data format (${expectedFormat})`);
-                    return; // Skip this item
-                }
-                imageResultDiv.appendChild(imgElement);
-            });
-
-            statusMessage.textContent = `Image(s) generated successfully! (${data.data.length} image${data.data.length > 1 ? 's' : ''})`;
-            statusMessage.style.color = 'green';
-        } else {
-             throw new Error('API response did not contain image data.');
-        }
+        
+        const data = await response.json();
+        this.displayImages(data.data);
+        this.showStatus('Image generated successfully!', 'success');
     }
-    
-    // --- Google Imagen Image Generation Function ---
-    async function generateGoogleImage(apiKey, selectedModel, modelConfig, prompt) {
-        // --- Construct API Request Body for Google Imagen ---
+
+    async generateGoogleImage(apiKey, model, modelConfig, prompt) {
+        // Google Imagen implementation
         const requestBody = {
-            instances: [
-                {
-                    prompt: prompt
-                }
-            ],
-            parameters: {
-                sampleCount: parseInt(nInput.value) || 1
-            }
+            prompt: prompt,
+            aspectRatio: this.sizeSelect.value,
+            personGeneration: document.getElementById('person_generation')?.value || 'ALLOW_ADULT'
         };
         
-        // Add aspect ratio if selected
-        if (aspectRatioSelect.value !== '1:1') {
-            requestBody.parameters.aspectRatio = aspectRatioSelect.value;
-        }
-        
-        // Add person generation parameter if not default
-        if (personGenerationSelect.value !== 'ALLOW_ADULT') {
-            requestBody.parameters.personGeneration = personGenerationSelect.value;
-        }
-
-
-        console.log('Sending request to Google Imagen:', JSON.stringify(requestBody, null, 2));
-
-        // --- Make API Call ---
-        const apiEndpoint = `${GOOGLE_IMAGEN_API_ENDPOINT}?key=${apiKey}`;
-        const response = await fetch(apiEndpoint, {
+        const response = await fetch(`${modelConfig.apiEndpoint}?key=${apiKey}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(requestBody)
         });
-
-        const data = await response.json();
-        console.log('Received response from Google Imagen:', data);
-
+        
         if (!response.ok) {
-            const errorMessage = data.error?.message || `HTTP error! Status: ${response.status}`;
-            throw new Error(errorMessage);
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error?.message || `HTTP ${response.status}`);
         }
+        
+        const data = await response.json();
+        // Process Google response format
+        this.displayImages(data.candidates || []);
+        this.showStatus('Image generated successfully!', 'success');
+    }
 
-        // Process the response from Google Imagen
-        if (data.predictions && data.predictions.length > 0) {
-            data.predictions.forEach((prediction, index) => {
-                if (prediction.bytesBase64Encoded) {
-                    const imgElement = document.createElement('img');
-                    imgElement.alt = `Generated image ${index + 1} for: ${prompt}`;
-                    imgElement.src = `data:image/png;base64,${prediction.bytesBase64Encoded}`;
-                    imageResultDiv.appendChild(imgElement);
-                }
+    displayImages(images) {
+        this.imageResultDiv.innerHTML = '';
+        
+        images.forEach((imageData, index) => {
+            const imageContainer = document.createElement('div');
+            imageContainer.className = 'image-container';
+            
+            const img = document.createElement('img');
+            img.src = imageData.url || `data:image/png;base64,${imageData.b64_json}`;
+            img.alt = `Generated image ${index + 1}`;
+            img.className = 'generated-image';
+            
+            // Add to media library for future camera roll
+            window.app?.mediaLibrary?.addMedia({
+                type: 'image',
+                url: img.src,
+                timestamp: Date.now(),
+                prompt: this.promptInput.value
             });
+            
+            imageContainer.appendChild(img);
+            this.imageResultDiv.appendChild(imageContainer);
+        });
+    }
 
-            statusMessage.textContent = `Image(s) generated successfully! (${data.predictions.length} image${data.predictions.length > 1 ? 's' : ''})`;
-            statusMessage.style.color = 'green';
-        } else {
-            throw new Error('API response did not contain image data.');
+    showStatus(message, type) {
+        this.statusMessage.textContent = message;
+        this.statusMessage.className = `status-${type}`;
+        
+        const colors = {
+            loading: 'blue',
+            success: 'green',
+            error: 'red'
+        };
+        
+        this.statusMessage.style.color = colors[type] || 'black';
+    }
+}
+
+// Video Generation Module
+class VideoGenerator {
+    constructor() {
+        // DOM elements
+        this.videoModelSelect = document.getElementById('video-model');
+        this.videoPromptInput = document.getElementById('video-prompt');
+        this.videoSizeSelect = document.getElementById('video-size');
+        this.videoSecondsSelect = document.getElementById('video-seconds');
+        this.inputReferenceInput = document.getElementById('input-reference');
+        this.generateVideoButton = document.getElementById('generate-video-button');
+        this.videoStatusMessage = document.getElementById('video-status-message');
+        this.videoResultDiv = document.getElementById('video-result');
+        
+        // Video generation state
+        this.currentVideoJob = null;
+        this.pollingInterval = null;
+        
+        // API endpoint
+        this.SORA_API_ENDPOINT = 'https://api.openai.com/v1/videos';
+    }
+
+    init() {
+        this.setupEventListeners();
+    }
+
+    setupEventListeners() {
+        this.generateVideoButton.addEventListener('click', () => this.generateVideo());
+    }
+
+    async generateVideo() {
+        const prompt = this.videoPromptInput.value.trim();
+        const apiKey = window.app?.apiKeyManager?.getKey('openai');
+        
+        if (!apiKey) {
+            this.showStatus('Error: OpenAI API Key not found.', 'error');
+            return;
+        }
+        
+        if (!prompt) {
+            this.showStatus('Error: Please enter a prompt.', 'error');
+            return;
+        }
+        
+        this.showStatus('Starting video generation...', 'loading');
+        this.generateVideoButton.disabled = true;
+        this.generateVideoButton.textContent = 'Generating...';
+        this.videoResultDiv.innerHTML = '';
+        
+        try {
+            // Create video generation job
+            const jobId = await this.createVideoJob(apiKey, prompt);
+            this.currentVideoJob = jobId;
+            
+            // Start polling for completion
+            this.startPolling(apiKey, jobId);
+            
+        } catch (error) {
+            console.error('Error generating video:', error);
+            this.showStatus(`Error: ${error.message}`, 'error');
+            this.resetUI();
         }
     }
 
-}); // End DOMContentLoaded
+    async createVideoJob(apiKey, prompt) {
+        const formData = new FormData();
+        formData.append('model', this.videoModelSelect.value);
+        formData.append('prompt', prompt);
+        formData.append('size', this.videoSizeSelect.value);
+        formData.append('seconds', this.videoSecondsSelect.value);
+        
+        // Add input reference if provided
+        if (this.inputReferenceInput.files[0]) {
+            formData.append('input_reference', this.inputReferenceInput.files[0]);
+        }
+        
+        const response = await fetch(this.SORA_API_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: formData
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data.id;
+    }
+
+    startPolling(apiKey, jobId) {
+        this.pollingInterval = setInterval(async () => {
+            try {
+                const status = await this.checkVideoStatus(apiKey, jobId);
+                
+                if (status.status === 'completed') {
+                    this.handleVideoCompleted(apiKey, jobId, status);
+                } else if (status.status === 'failed') {
+                    this.handleVideoFailed(status);
+                } else {
+                    // Update progress if available
+                    const progress = status.progress || 0;
+                    this.showStatus(`Generating video... ${progress}% complete`, 'loading');
+                    this.updateProgressBar(progress);
+                }
+            } catch (error) {
+                console.error('Error checking video status:', error);
+                this.handleVideoFailed({ error: error.message });
+            }
+        }, 10000); // Poll every 10 seconds
+    }
+
+    async checkVideoStatus(apiKey, jobId) {
+        const response = await fetch(`${this.SORA_API_ENDPOINT}/${jobId}`, {
+            headers: {
+                'Authorization': `Bearer ${apiKey}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        return await response.json();
+    }
+
+    async handleVideoCompleted(apiKey, jobId, status) {
+        this.stopPolling();
+        
+        try {
+            // Download the video
+            const videoUrl = await this.downloadVideo(apiKey, jobId);
+            this.displayVideo(videoUrl, status);
+            this.showStatus('Video generated successfully!', 'success');
+            
+            // Add to media library for future camera roll
+            window.app?.mediaLibrary?.addMedia({
+                type: 'video',
+                url: videoUrl,
+                timestamp: Date.now(),
+                prompt: this.videoPromptInput.value,
+                duration: status.seconds,
+                size: status.size,
+                model: status.model
+            });
+            
+        } catch (error) {
+            console.error('Error downloading video:', error);
+            this.showStatus(`Error downloading video: ${error.message}`, 'error');
+        } finally {
+            this.resetUI();
+        }
+    }
+
+    handleVideoFailed(status) {
+        this.stopPolling();
+        this.showStatus(`Video generation failed: ${status.error || 'Unknown error'}`, 'error');
+        this.resetUI();
+    }
+
+    async downloadVideo(apiKey, jobId) {
+        const response = await fetch(`${this.SORA_API_ENDPOINT}/${jobId}/content`, {
+            headers: {
+                'Authorization': `Bearer ${apiKey}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const blob = await response.blob();
+        return URL.createObjectURL(blob);
+    }
+
+    displayVideo(videoUrl, metadata) {
+        this.videoResultDiv.innerHTML = '';
+        
+        // Create video player container
+        const videoContainer = document.createElement('div');
+        videoContainer.className = 'video-player-container';
+        
+        // Create video element
+        const video = document.createElement('video');
+        video.src = videoUrl;
+        video.controls = true;
+        video.className = 'video-player';
+        video.autoplay = false;
+        
+        // Create metadata display
+        const metadataDiv = document.createElement('div');
+        metadataDiv.className = 'video-metadata';
+        metadataDiv.innerHTML = `
+            <h3>Video Details</h3>
+            <p><strong>Model:</strong> ${metadata.model}</p>
+            <p><strong>Size:</strong> ${metadata.size}</p>
+            <p><strong>Duration:</strong> ${metadata.seconds} seconds</p>
+            <p><strong>Created:</strong> ${new Date(metadata.created_at * 1000).toLocaleString()}</p>
+        `;
+        
+        // Create action buttons
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'video-actions';
+        
+        const downloadBtn = document.createElement('button');
+        downloadBtn.textContent = 'Download Video';
+        downloadBtn.onclick = () => this.downloadVideoFile(videoUrl);
+        
+        const thumbnailBtn = document.createElement('button');
+        thumbnailBtn.textContent = 'Download Thumbnail';
+        thumbnailBtn.className = 'secondary';
+        thumbnailBtn.onclick = () => this.downloadThumbnail(metadata.id);
+        
+        actionsDiv.appendChild(downloadBtn);
+        actionsDiv.appendChild(thumbnailBtn);
+        
+        videoContainer.appendChild(video);
+        videoContainer.appendChild(metadataDiv);
+        videoContainer.appendChild(actionsDiv);
+        
+        this.videoResultDiv.appendChild(videoContainer);
+    }
+
+    downloadVideoFile(videoUrl) {
+        const a = document.createElement('a');
+        a.href = videoUrl;
+        a.download = `sora-video-${Date.now()}.mp4`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    async downloadThumbnail(jobId) {
+        const apiKey = window.app?.apiKeyManager?.getKey('openai');
+        if (!apiKey) return;
+        
+        try {
+            const response = await fetch(`${this.SORA_API_ENDPOINT}/${jobId}/content?variant=thumbnail`, {
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`
+                }
+            });
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `sora-thumbnail-${Date.now()}.webp`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        } catch (error) {
+            console.error('Error downloading thumbnail:', error);
+        }
+    }
+
+    updateProgressBar(progress) {
+        let progressBar = this.videoResultDiv.querySelector('.progress-bar');
+        
+        if (!progressBar) {
+            const statusDiv = document.createElement('div');
+            statusDiv.className = 'generation-status';
+            statusDiv.innerHTML = `
+                <div class="status-spinner"></div>
+                <div>
+                    <p>Generating video...</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progress}%"></div>
+                    </div>
+                </div>
+            `;
+            this.videoResultDiv.appendChild(statusDiv);
+            progressBar = statusDiv.querySelector('.progress-bar');
+        }
+        
+        const progressFill = progressBar.querySelector('.progress-fill');
+        if (progressFill) {
+            progressFill.style.width = `${progress}%`;
+        }
+    }
+
+    stopPolling() {
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
+        }
+    }
+
+    resetUI() {
+        this.generateVideoButton.disabled = false;
+        this.generateVideoButton.textContent = 'Generate Video';
+        this.currentVideoJob = null;
+    }
+
+    showStatus(message, type) {
+        this.videoStatusMessage.textContent = message;
+        this.videoStatusMessage.className = `status-${type}`;
+        
+        const colors = {
+            loading: 'blue',
+            success: 'green',
+            error: 'red'
+        };
+        
+        this.videoStatusMessage.style.color = colors[type] || 'black';
+    }
+}
+
+// Media Library Module (Foundation for Camera Roll)
+class MediaLibrary {
+    constructor() {
+        this.media = [];
+        this.STORAGE_KEY = 'ai_studio_media_library';
+    }
+
+    init() {
+        this.loadFromStorage();
+    }
+
+    addMedia(mediaItem) {
+        const item = {
+            id: this.generateId(),
+            ...mediaItem,
+            timestamp: mediaItem.timestamp || Date.now()
+        };
+        
+        this.media.unshift(item); // Add to beginning
+        this.saveToStorage();
+        
+        // Limit storage to prevent excessive memory usage
+        if (this.media.length > 100) {
+            this.media = this.media.slice(0, 100);
+            this.saveToStorage();
+        }
+    }
+
+    getMedia(type = null) {
+        if (type) {
+            return this.media.filter(item => item.type === type);
+        }
+        return this.media;
+    }
+
+    removeMedia(id) {
+        this.media = this.media.filter(item => item.id !== id);
+        this.saveToStorage();
+    }
+
+    clearAll() {
+        this.media = [];
+        this.saveToStorage();
+    }
+
+    loadFromStorage() {
+        try {
+            const stored = localStorage.getItem(this.STORAGE_KEY);
+            if (stored) {
+                this.media = JSON.parse(stored);
+            }
+        } catch (error) {
+            console.error('Error loading media library:', error);
+            this.media = [];
+        }
+    }
+
+    saveToStorage() {
+        try {
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.media));
+        } catch (error) {
+            console.error('Error saving media library:', error);
+        }
+    }
+
+    generateId() {
+        return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+}
+
+// Make app globally available for module communication
+window.app = null;
+document.addEventListener('DOMContentLoaded', () => {
+    window.app = new AIStudio();
+    window.app.init();
+});

@@ -29,7 +29,53 @@ h1, h2 {
 
 h1 {
     text-align: center;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #666;
     margin-bottom: 30px;
+    font-size: 1.1em;
+}
+
+/* Tab Navigation */
+.tab-navigation {
+    display: flex;
+    border-bottom: 2px solid #e0e0e0;
+    margin-bottom: 30px;
+}
+
+.tab-button {
+    background: none;
+    border: none;
+    padding: 12px 24px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    color: #666;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.tab-button:hover {
+    color: #333;
+    background-color: #f8f9fa;
+}
+
+.tab-button.active {
+    color: #007bff;
+    border-bottom-color: #007bff;
+    background-color: #f8f9fa;
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
 }
 
 section {
@@ -249,5 +295,158 @@ small {
     border-bottom: none;
     margin-bottom: 0;
     padding-bottom: 0;
+}
+
+/* Video-specific styles */
+.video-player-container {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    margin: 20px auto;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.video-player {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.video-metadata {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+    border: 1px solid #e9ecef;
+}
+
+.video-metadata h3 {
+    margin-bottom: 10px;
+    color: #495057;
+    font-size: 1.1em;
+}
+
+.video-metadata p {
+    margin: 5px 0;
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+.video-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.video-actions button {
+    padding: 8px 16px;
+    border: 1px solid #007bff;
+    background: #007bff;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.3s ease;
+}
+
+.video-actions button:hover {
+    background: #0056b3;
+    border-color: #0056b3;
+}
+
+.video-actions button.secondary {
+    background: white;
+    color: #007bff;
+}
+
+.video-actions button.secondary:hover {
+    background: #f8f9fa;
+}
+
+.video-thumbnail {
+    width: 100px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.video-thumbnail:hover {
+    transform: scale(1.05);
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: #007bff;
+    transition: width 0.3s ease;
+    border-radius: 4px;
+}
+
+.generation-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin: 15px 0;
+}
+
+.status-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #e9ecef;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* File input styling */
+input[type="file"] {
+    padding: 8px;
+    border: 2px dashed #ddd;
+    border-radius: 4px;
+    background: #f9f9f9;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+input[type="file"]:hover {
+    border-color: #007bff;
+}
+
+/* Responsive video styles */
+@media (max-width: 768px) {
+    .video-actions {
+        flex-direction: column;
+    }
+    
+    .video-actions button {
+        width: 100%;
+    }
+    
+    .video-metadata {
+        padding: 10px;
+    }
 }
 
