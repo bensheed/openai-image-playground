@@ -14,12 +14,12 @@
             <h2>Select Provider</h2>
             <div class="provider-options">
                 <div class="provider-option">
-                    <input type="radio" id="provider-openai" name="provider" value="openai" checked>
+                    <input type="radio" id="provider-openai" name="provider" value="openai">
                     <label for="provider-openai">OpenAI</label>
                 </div>
                 <div class="provider-option">
-                    <input type="radio" id="provider-google" name="provider" value="google">
-                    <label for="provider-google">Google Imagen</label>
+                    <input type="radio" id="provider-google" name="provider" value="google" checked>
+                    <label for="provider-google">Google Gemini (Free SVG)</label>
                 </div>
                 <div class="provider-option disabled">
                     <input type="radio" id="provider-vertex-ai" name="provider" value="vertex-ai" disabled>
@@ -74,8 +74,8 @@
                 <option value="gpt-image-1" selected>gpt-image-1</option>
                 <option value="dall-e-3">dall-e-3</option>
                 <option value="dall-e-2">dall-e-2</option>
-                <!-- Google Imagen Models (initially hidden via JS) -->
-                <option value="imagen-3.0-generate-002" class="google-model" style="display: none;">imagen-3.0-generate-002</option>
+                <!-- Free Google model (initially hidden via JS) -->
+                <option value="gemini-3.5-flash-lite (Free SVG)" class="google-model" style="display: none;">gemini-3.5-flash-lite (Free SVG)</option>
             </select>
 
             <label for="prompt">Prompt:</label>
@@ -148,7 +148,7 @@
                     <!-- <small>Only for JPEG/WEBP</small> --> <!-- Replaced by description -->
                 </div>
                 
-                <!-- Google Imagen Specific Options -->
+                <!-- Kept for compatibility with the existing controls; free SVG mode does not use them. -->
                 <div class="option-item google-imagen-option" style="display: none;">
                     <label for="aspect_ratio">Aspect Ratio:</label>
                     <select id="aspect_ratio">
@@ -158,7 +158,7 @@
                         <option value="9:16">9:16 (Portrait)</option>
                         <option value="16:9">16:9 (Landscape)</option>
                     </select>
-                    <p class="option-description">Google Imagen only. The aspect ratio of the generated image.</p>
+                    <p class="option-description">Not used by the free Google SVG mode.</p>
                 </div>
 
                 <div class="option-item google-imagen-option" style="display: none;">
@@ -167,7 +167,7 @@
                         <option value="ALLOW_ADULT" selected>Allow Adults</option>
                         <option value="DONT_ALLOW">Don't Allow</option>
                     </select>
-                    <p class="option-description">Google Imagen only. Controls whether people can be generated in images.</p>
+                    <p class="option-description">Not used by the free Google SVG mode.</p>
                 </div>
             </div>
 
@@ -182,6 +182,18 @@
             <div id="image-result">
                 <!-- Generated image will be displayed here -->
             </div>
+
+            <div class="result-actions">
+                <button id="download-current-button" type="button">Download current image</button>
+                <button id="download-all-button" type="button">Download all images</button>
+                <button id="export-gallery-button" type="button">Export gallery JSON</button>
+                <button id="clear-gallery-button" type="button" class="secondary-button">Clear gallery</button>
+            </div>
+        </section>
+
+        <section id="gallery-section">
+            <h2>Saved Gallery</h2>
+            <div id="gallery" class="gallery-grid"></div>
         </section>
     </div>
 
