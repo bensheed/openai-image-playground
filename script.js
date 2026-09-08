@@ -33,6 +33,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusMessage = document.getElementById('status-message');
     const nDescription = document.getElementById('n-description');
     const imageResultDiv = document.getElementById('image-result');
+    const galleryDiv = document.getElementById('gallery');
+    const downloadCurrentButton = document.getElementById('download-current-button');
+    const downloadAllButton = document.getElementById('download-all-button');
+    const exportGalleryButton = document.getElementById('export-gallery-button');
+    const clearGalleryButton = document.getElementById('clear-gallery-button');
 
     // Model Specific Option Containers & Controls
     const dalle3OptionsDiv = document.getElementById('dalle3-options');
@@ -45,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const outputFormatSelect = document.getElementById('output_format');
     const outputCompressionInput = document.getElementById('output_compression');
     
-    // Google Imagen Specific Options
+    // Legacy Google image options; hidden for the free SVG mode.
     const googleImagenOptions = document.querySelectorAll('.google-imagen-option');
     const aspectRatioSelect = document.getElementById('aspect_ratio');
     const personGenerationSelect = document.getElementById('person_generation');
@@ -55,8 +60,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // API Constants
     const OPENAI_API_KEY_NAME = 'openai_api_key';
     const GOOGLE_API_KEY_NAME = 'google_api_key';
+    const GALLERY_KEY_NAME = 'ai_image_gallery';
     const OPENAI_API_ENDPOINT = 'https://api.openai.com/v1/images/generations';
-    const GOOGLE_IMAGEN_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict';
+    const GOOGLE_GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent';
+
+    let generatedImageGallery = JSON.parse(localStorage.getItem(GALLERY_KEY_NAME) || '[]');
 
     // --- Model Parameter Definitions ---
     const modelOptions = {
@@ -101,21 +109,21 @@ document.addEventListener('DOMContentLoaded', () => {
             apiEndpoint: OPENAI_API_ENDPOINT
         },
         
-        // Google Imagen (Gemini API) Model
-        "imagen-3.0-generate-002": {
-            provider: "google", // Corresponds to the "Google Imagen" radio button
-            sizes: [], // Controlled by aspect ratio instead
+        // Free Google Gemini mode: Gemini creates an SVG illustration as text.
+        "gemini-3.5-flash-lite (Free SVG)": {
+            provider: "google", // Corresponds to the Google free-tier radio button
+            sizes: [],
             qualities: [], // Not applicable
-            maxN: 4, // Google Imagen supports 1-4 images
+            maxN: 1,
             supportsStyle: false,
             supportsBackground: false,
             supportsModeration: false,
             supportsOutputFormat: false,
             supportsOutputCompression: false,
-            supportsAspectRatio: true,
-            supportsPersonGeneration: true,
-            responseFormat: 'b64_json',
-            apiEndpoint: GOOGLE_IMAGEN_API_ENDPOINT // Gemini API endpoint
+            supportsAspectRatio: false,
+            supportsPersonGeneration: false,
+            responseFormat: 'svg',
+            apiEndpoint: GOOGLE_GEMINI_API_ENDPOINT
         }
     };
 
@@ -188,9 +196,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show/Hide Provider-Specific Options
         const isGoogleModel = options.provider === 'google';
         
-        // Show/hide Google Imagen specific options
+        // The free SVG mode does not use Imagen-only controls.
         googleImagenOptions.forEach(el => {
-            el.style.display = isGoogleModel ? 'block' : 'none';
+            el.style.display = isGoogleModel && options.supportsAspectRatio ? 'block' : 'none';
         });
         
         // For OpenAI models, handle size dropdown
@@ -255,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (selectedModel === 'dall-e-3') {
                 descriptionText += " DALL-E 3 only supports 1.";
             } else if (options.provider === 'google') {
-                descriptionText += ` Google Imagen supports 1-${options.maxN}.`;
+                descriptionText += ' Free Google mode returns one SVG illustration.';
             } else if (selectedModel === 'gpt-image-1') {
                  descriptionText += ` Max ${options.maxN}.`;
             } else if (selectedModel === 'dall-e-2') {
@@ -413,10 +421,181 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load the API keys when the page loads
     loadApiKeys();
+    renderGallery();
 
-    // Initialize UI based on default provider and model selection
-    updateProviderUI('openai');
+    // Initialize the playground in the free Google mode.
+    updateProviderUI('google');
     updateOptionsUI(modelSelect.value);
+
+    function saveGallery() {
+        localStorage.setItem(GALLERY_KEY_NAME, JSON.stringify(generatedImageGallery));
+    }
+
+    function renderGallery() {
+        galleryDiv.innerHTML = '';
+
+        if (!generatedImageGallery.length) {
+            galleryDiv.innerHTML = '<p class="empty-state">No saved images yet. Generate an image to start your gallery.</p>';
+            return;
+        }
+
+        generatedImageGallery.forEach((item) => {
+            const card = document.createElement('div');
+            card.className = 'gallery-card';
+
+            const image = document.createElement('img');
+            image.src = item.src;
+            image.alt = item.prompt || 'Saved generated image';
+
+            const info = document.createElement('div');
+            info.className = 'gallery-card-info';
+
+            const promptText = document.createElement('p');
+            promptText.textContent = item.prompt ? item.prompt.slice(0, 60) + (item.prompt.length > 60 ? '...' : '') : 'Untitled generation';
+
+            const actions = document.createElement('div');
+            actions.className = 'gallery-actions';
+
+            const downloadButton = document.createElement('button');
+            downloadButton.type = 'button';
+            downloadButton.textContent = 'Download';
+            downloadButton.addEventListener('click', () => downloadImage(item.src, `generated-${item.id}.png`));
+
+            const editButton = document.createElement('button');
+            editButton.type = 'button';
+            editButton.textContent = 'Edit';
+            editButton.addEventListener('click', () => applySimpleEdit(item.id));
+
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.textContent = 'Remove';
+            removeButton.classList.add('secondary-button');
+            removeButton.addEventListener('click', () => {
+                generatedImageGallery = generatedImageGallery.filter((galleryItem) => galleryItem.id !== item.id);
+                saveGallery();
+                renderGallery();
+            });
+
+            actions.appendChild(downloadButton);
+            actions.appendChild(editButton);
+            actions.appendChild(removeButton);
+            info.appendChild(promptText);
+            info.appendChild(actions);
+            card.appendChild(image);
+            card.appendChild(info);
+            galleryDiv.appendChild(card);
+        });
+    }
+
+    function downloadImage(src, filename = 'ai-image.png') {
+        const anchor = document.createElement('a');
+        anchor.href = src;
+        anchor.download = filename;
+        anchor.target = '_blank';
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+    }
+
+    function downloadCurrentImage() {
+        const currentImage = imageResultDiv.querySelector('img');
+        if (!currentImage) {
+            statusMessage.textContent = 'No generated image available to download.';
+            statusMessage.style.color = 'orange';
+            return;
+        }
+
+        downloadImage(currentImage.src, 'current-generated-image.png');
+        statusMessage.textContent = 'Current image download started.';
+        statusMessage.style.color = 'green';
+    }
+
+    function downloadAllGeneratedImages() {
+        const images = [...imageResultDiv.querySelectorAll('img')];
+
+        if (!images.length) {
+            statusMessage.textContent = 'No generated images currently available to download.';
+            statusMessage.style.color = 'orange';
+            return;
+        }
+
+        images.forEach((image, index) => {
+            setTimeout(() => {
+                downloadImage(image.src, `generated-image-${index + 1}.png`);
+            }, index * 250);
+        });
+
+        statusMessage.textContent = 'Download started for all generated images.';
+        statusMessage.style.color = 'green';
+    }
+
+    function exportGallery() {
+        if (!generatedImageGallery.length) {
+            statusMessage.textContent = 'Your gallery is empty. Nothing to export yet.';
+            statusMessage.style.color = 'orange';
+            return;
+        }
+
+        const jsonBlob = new Blob([JSON.stringify(generatedImageGallery, null, 2)], { type: 'application/json' });
+        const objectUrl = URL.createObjectURL(jsonBlob);
+        downloadImage(objectUrl, 'image-gallery-export.json');
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+
+        statusMessage.textContent = 'Gallery metadata exported successfully.';
+        statusMessage.style.color = 'green';
+    }
+
+    function clearGallery() {
+        generatedImageGallery = [];
+        saveGallery();
+        renderGallery();
+        statusMessage.textContent = 'Gallery cleared.';
+        statusMessage.style.color = 'green';
+    }
+
+    function applySimpleEdit(itemId) {
+        const targetItem = generatedImageGallery.find((item) => item.id === itemId);
+        if (!targetItem) {
+            return;
+        }
+
+        const image = new Image();
+        // Data URLs are local and can fail to load when crossOrigin is set.
+        if (/^https?:\/\//i.test(targetItem.src)) {
+            image.crossOrigin = 'anonymous';
+        }
+
+        image.onload = () => {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+
+            canvas.width = image.width;
+            canvas.height = image.height;
+            context.filter = 'brightness(1.12) contrast(1.2) saturate(1.2)';
+            context.drawImage(image, 0, 0);
+
+            const editedImageData = canvas.toDataURL('image/png');
+            targetItem.src = editedImageData;
+            targetItem.edited = true;
+            saveGallery();
+            renderGallery();
+
+            statusMessage.textContent = 'Basic enhancement applied to the selected gallery image.';
+            statusMessage.style.color = 'green';
+        };
+
+        image.onerror = () => {
+            statusMessage.textContent = 'This image could not be edited in the browser.';
+            statusMessage.style.color = 'red';
+        };
+
+        image.src = targetItem.src;
+    }
+
+    downloadCurrentButton.addEventListener('click', downloadCurrentImage);
+    downloadAllButton.addEventListener('click', downloadAllGeneratedImages);
+    exportGalleryButton.addEventListener('click', exportGallery);
+    clearGalleryButton.addEventListener('click', clearGallery);
 
     // --- Image Generation Logic ---
     generateButton.addEventListener('click', async () => {
@@ -461,7 +640,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (selectedProvider === 'openai') {
                 await generateOpenAIImage(apiKey, selectedModel, modelConfig, prompt);
             } else if (selectedProvider === 'google') {
-                await generateGoogleImage(apiKey, selectedModel, modelConfig, prompt);
+                await generateGoogleFreeSvg(apiKey, selectedModel, modelConfig, prompt);
             }
         } catch (error) {
             console.error(`Error generating image with ${selectedProvider}:`, error);
@@ -471,7 +650,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (selectedProvider === 'openai' && (error.message.includes('Error in request') || error.message.includes('check your input') || error.message.includes('400'))) {
                 displayErrorMessage += '\n\n(This might be due to insufficient credits or account limits. Check your balance: https://platform.openai.com/settings/organization/billing/overview)';
             } else if (selectedProvider === 'google') {
-                displayErrorMessage += '\n\n(Make sure your Google API key has access to the Gemini API and check your quota limits)';
+                displayErrorMessage += '\n\n(Make sure your Google API key has access to the Gemini API free tier and check your quota limits)';
             }
             
             statusMessage.textContent = displayErrorMessage;
@@ -553,25 +732,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (data.data && data.data.length > 0) {
-            // Determine expected format for processing
-            const expectedFormat = modelConfig.responseFormat; // 'url' or 'b64_json'
+            const items = [];
 
             data.data.forEach((item, index) => {
                 const imgElement = document.createElement('img');
                 imgElement.alt = `Generated image ${index + 1} for: ${prompt}`;
 
-                if (expectedFormat === 'url' && item.url) {
-                    imgElement.src = item.url;
-                } else if (expectedFormat === 'b64_json' && item.b64_json) {
-                    // For b64, determine the image type from the user's selection (or default)
-                    const imageType = requestBody.output_format || 'png'; // Use selected format, default to png
-                    imgElement.src = `data:image/${imageType};base64,${item.b64_json}`;
-                } else {
-                    console.warn(`Item ${index} in response did not contain expected data format (${expectedFormat})`);
-                    return; // Skip this item
+                let imageSource = '';
+                if (modelConfig.responseFormat === 'url' && item.url) {
+                    imageSource = item.url;
+                } else if (modelConfig.responseFormat === 'b64_json' && item.b64_json) {
+                    const imageType = requestBody.output_format || 'png';
+                    imageSource = `data:image/${imageType};base64,${item.b64_json}`;
                 }
+
+                if (!imageSource) {
+                    console.warn(`Item ${index} in response did not contain expected data format (${modelConfig.responseFormat})`);
+                    return;
+                }
+
+                imgElement.src = imageSource;
                 imageResultDiv.appendChild(imgElement);
+                items.push({
+                    id: Date.now() + Math.random() + index,
+                    src: imageSource,
+                    prompt: prompt,
+                    provider: selectedModel.startsWith('dall') || selectedModel === 'gpt-image-1' ? 'openai' : 'google',
+                    model: selectedModel,
+                    createdAt: new Date().toISOString()
+                });
             });
+
+            items.forEach((item) => {
+                generatedImageGallery.unshift(item);
+            });
+
+            if (generatedImageGallery.length > 20) {
+                generatedImageGallery = generatedImageGallery.slice(0, 20);
+            }
+            saveGallery();
+            renderGallery();
 
             statusMessage.textContent = `Image(s) generated successfully! (${data.data.length} image${data.data.length > 1 ? 's' : ''})`;
             statusMessage.style.color = 'green';
@@ -580,35 +780,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // --- Google Imagen Image Generation Function ---
-    async function generateGoogleImage(apiKey, selectedModel, modelConfig, prompt) {
-        // --- Construct API Request Body for Google Imagen ---
+    // --- Free Google image-like generation using an SVG returned by Gemini ---
+    async function generateGoogleFreeSvg(apiKey, selectedModel, modelConfig, prompt) {
         const requestBody = {
-            instances: [
-                {
-                    prompt: prompt
-                }
-            ],
-            parameters: {
-                sampleCount: parseInt(nInput.value) || 1
+            contents: [{
+                parts: [{
+                    text: `Create one polished SVG illustration based on this request: ${prompt}.\n\nReturn only valid, self-contained SVG markup. Do not use markdown fences, HTML, scripts, external images, or external fonts. Use a viewBox, a tasteful color palette, and enough detail to make the result visually useful. The SVG must begin with <svg and end with </svg>.`
+                }]
+            }],
+            generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 4096,
+                responseMimeType: 'text/plain'
             }
         };
-        
-        // Add aspect ratio if selected
-        if (aspectRatioSelect.value !== '1:1') {
-            requestBody.parameters.aspectRatio = aspectRatioSelect.value;
-        }
-        
-        // Add person generation parameter if not default
-        if (personGenerationSelect.value !== 'ALLOW_ADULT') {
-            requestBody.parameters.personGeneration = personGenerationSelect.value;
-        }
 
-
-        console.log('Sending request to Google Imagen:', JSON.stringify(requestBody, null, 2));
+        console.log('Sending request to free Google Gemini:', JSON.stringify(requestBody, null, 2));
 
         // --- Make API Call ---
-        const apiEndpoint = `${GOOGLE_IMAGEN_API_ENDPOINT}?key=${apiKey}`;
+        const apiEndpoint = `${GOOGLE_GEMINI_API_ENDPOINT}?key=${encodeURIComponent(apiKey)}`;
         const response = await fetch(apiEndpoint, {
             method: 'POST',
             headers: {
@@ -618,29 +808,81 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const data = await response.json();
-        console.log('Received response from Google Imagen:', data);
+        console.log('Received response from free Google Gemini:', data);
 
         if (!response.ok) {
             const errorMessage = data.error?.message || `HTTP error! Status: ${response.status}`;
             throw new Error(errorMessage);
         }
 
-        // Process the response from Google Imagen
-        if (data.predictions && data.predictions.length > 0) {
-            data.predictions.forEach((prediction, index) => {
-                if (prediction.bytesBase64Encoded) {
-                    const imgElement = document.createElement('img');
-                    imgElement.alt = `Generated image ${index + 1} for: ${prompt}`;
-                    imgElement.src = `data:image/png;base64,${prediction.bytesBase64Encoded}`;
-                    imageResultDiv.appendChild(imgElement);
-                }
-            });
+        const responseText = (data.candidates || [])
+            .flatMap(candidate => candidate.content?.parts || [])
+            .map(part => part.text || '')
+            .join('\n')
+            .trim();
+        const svgStart = responseText.indexOf('<svg');
+        const svgEnd = responseText.lastIndexOf('</svg>');
+        const selfClosingSvgEnd = responseText.indexOf('/>', svgStart);
+        const hasCompleteSvg = svgStart !== -1 && svgEnd !== -1;
+        const hasSelfClosingSvg = svgStart !== -1 && selfClosingSvgEnd !== -1 && (!hasCompleteSvg || selfClosingSvgEnd < svgEnd);
+        let svg = hasCompleteSvg
+            ? responseText.slice(svgStart, svgEnd + '</svg>'.length)
+            : hasSelfClosingSvg
+                ? responseText.slice(svgStart, selfClosingSvgEnd + 2)
+                : '';
 
-            statusMessage.textContent = `Image(s) generated successfully! (${data.predictions.length} image${data.predictions.length > 1 ? 's' : ''})`;
-            statusMessage.style.color = 'green';
-        } else {
-            throw new Error('API response did not contain image data.');
+        let svgDocument = new DOMParser().parseFromString(svg, 'image/svg+xml');
+        if (svgDocument.querySelector('parsererror')) {
+            // Gemini sometimes emits a bare ampersand in SVG text or URLs.
+            const repairedSvg = svg.replace(/&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)/g, '&amp;');
+            svgDocument = new DOMParser().parseFromString(repairedSvg, 'image/svg+xml');
         }
+
+        const svgRoot = svgDocument.documentElement;
+        let usedFallback = false;
+        if (!svgRoot || svgRoot.nodeName !== 'svg' || svgDocument.querySelector('parsererror')) {
+            const safePrompt = prompt.slice(0, 180).replace(/[&<>"']/g, (character) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;'
+            }[character]));
+            svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024"><defs><linearGradient id="background" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#dbeafe"/><stop offset="1" stop-color="#fef3c7"/></linearGradient></defs><rect width="1024" height="1024" fill="url(#background)"/><circle cx="512" cy="420" r="190" fill="#ffffff" opacity="0.75"/><path d="M180 820 Q512 560 844 820" fill="none" stroke="#334155" stroke-width="28" stroke-linecap="round"/><text x="512" y="930" text-anchor="middle" font-family="sans-serif" font-size="28" fill="#334155">${safePrompt}</text></svg>`;
+            usedFallback = true;
+        } else {
+            svgRoot.setAttribute('width', svgRoot.getAttribute('width') || '1024');
+            svgRoot.setAttribute('height', svgRoot.getAttribute('height') || '1024');
+            svgRoot.setAttribute('viewBox', svgRoot.getAttribute('viewBox') || '0 0 1024 1024');
+            svgDocument.querySelectorAll('script, foreignObject, iframe, object, embed').forEach((element) => element.remove());
+
+            const background = svgDocument.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            background.setAttribute('width', '100%');
+            background.setAttribute('height', '100%');
+            background.setAttribute('fill', '#f3f6fb');
+            svgRoot.insertBefore(background, svgRoot.firstChild);
+            svg = new XMLSerializer().serializeToString(svgRoot);
+        }
+        const imageSource = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+        const imgElement = document.createElement('img');
+        imgElement.alt = `Generated illustration for: ${prompt}`;
+        imgElement.src = imageSource;
+        imageResultDiv.appendChild(imgElement);
+
+        generatedImageGallery.unshift({
+            id: Date.now() + Math.random(),
+            src: imageSource,
+            prompt: prompt,
+            provider: 'google',
+            model: selectedModel,
+            createdAt: new Date().toISOString()
+        });
+        if (generatedImageGallery.length > 20) {
+            generatedImageGallery = generatedImageGallery.slice(0, 20);
+        }
+        saveGallery();
+        renderGallery();
+
+        statusMessage.textContent = usedFallback
+            ? 'Google returned invalid SVG, so a local fallback illustration was created.'
+            : 'Free Google SVG illustration generated successfully!';
+        statusMessage.style.color = 'green';
     }
 
 }); // End DOMContentLoaded
